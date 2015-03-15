@@ -1,0 +1,14 @@
+bin/
+build/
+/checksum/
+cscope.out
+depend/
+doc/
+pcopy.version
+tags
+tmp*
+
+*.pot
+*.mo
+
+.*.sw?
