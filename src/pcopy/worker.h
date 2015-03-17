@@ -52,7 +52,9 @@ struct worker {
 	} status;
 };
 
-void worker_process(const char * inputs[], unsigned int nb_inputs, const char * output);
+struct worker * worker_get(unsigned int * nb_working_workers, unsigned int * nb_total_workers);
+void worker_process(char * inputs[], unsigned int nb_inputs, const char * output);
+void worker_release(void);
 
 #endif
 

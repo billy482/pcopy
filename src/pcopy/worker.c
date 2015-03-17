@@ -36,6 +36,8 @@
 #include <fcntl.h>
 // gettext
 #include <libintl.h>
+// pthread_mutex_lock, pthread_mutex_unlock
+#include <pthread.h>
 // sem_init, sem_post, sem_wait
 #include <semaphore.h>
 // asprintf
@@ -56,7 +58,7 @@
 #include "util.h"
 #include "worker.h"
 
-static const char ** worker_inputs = NULL;
+static char ** worker_inputs = NULL;
 static unsigned int worker_nb_inputs = 0;
 static const char * worker_output = NULL;
 static size_t worker_output_length = 0;
@@ -67,11 +69,30 @@ static unsigned long worker_n_jobs = 0;
 static struct worker * workers = NULL;
 static unsigned int worker_nb_workers = 0;
 
+static pthread_mutex_t worker_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+
 static void worker_process_child(void * arg);
 static void worker_process_do(void * arg);
 static int worker_process_do2(const char * partial_path, const char * full_path);
 
-void worker_process(const char * inputs[], unsigned int nb_inputs, const char * output) {
+
+struct worker * worker_get(unsigned int * nb_working_workers, unsigned int * nb_total_workers) {
+	pthread_mutex_lock(&worker_lock);
+
+	unsigned int i, nb_working = 0;
+	for (i = 0; i < worker_nb_workers; i++)
+		if (workers[i].status == worker_status_running)
+			nb_working++;
+
+	if (nb_working_workers != NULL)
+		*nb_working_workers = nb_working;
+	if (nb_total_workers != NULL)
+		*nb_total_workers = worker_nb_workers;
+
+	return workers;
+}
+
+void worker_process(char * inputs[], unsigned int nb_inputs, const char * output) {
 	worker_inputs = inputs;
 	worker_nb_inputs = nb_inputs;
 	worker_output = output;
@@ -83,6 +104,8 @@ void worker_process(const char * inputs[], unsigned int nb_inputs, const char * 
 static void worker_process_child(void * arg) {
 	struct worker * worker = arg;
 	worker->status = worker_status_running;
+
+	log_write(gettext("#%lu @ copy regular file from '%s' to '%s'"), worker->job, worker->src_file, worker->dest_file);
 
 	int fd_in = open(worker->src_file, O_RDONLY);
 	if (fd_in < 0) {
@@ -133,7 +156,10 @@ error_close_in:
 
 error:
 	worker->status = worker_status_finished;
+
+	pthread_mutex_lock(&worker_lock);
 	sem_post(&worker_jobs);
+	pthread_mutex_unlock(&worker_lock);
 }
 
 static void worker_process_do(void * arg __attribute__((unused))) {
@@ -141,6 +167,7 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 	sem_init(&worker_jobs, 0, nb_cpus);
 
 	workers = calloc(nb_cpus, sizeof(struct worker));
+	worker_nb_workers = nb_cpus;
 
 	unsigned int i;
 	int failed = 0;
@@ -264,7 +291,7 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 	} else if (S_ISREG(info.st_mode)) {
 		sem_wait(&worker_jobs);
 
-		struct worker * worker = NULL;
+		struct worker * worker = workers;
 		unsigned int i;
 		for (i = 0; i < worker_nb_workers && worker == NULL; i++)
 			if (workers[i].status == worker_status_init)
@@ -274,6 +301,7 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 			if (workers[i].status == worker_status_finished)
 				worker = workers + i;
 
+		worker->job = i_job;
 		worker->status = worker_status_init;
 		worker->src_file = strdup(full_path);
 		worker->dest_file = strdup(output);
@@ -292,5 +320,9 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 	free(output);
 
 	return error;
+}
+
+void worker_release() {
+	pthread_mutex_unlock(&worker_lock);
 }
 

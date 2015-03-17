@@ -45,14 +45,56 @@
 // exit
 #include <unistd.h>
 
+#include "log.h"
+#include "worker.h"
+
 #include "pcopy.version"
 
 static WINDOW * mainScreen = NULL;
 static WINDOW * headerWindow = NULL;
 
+static unsigned int row, col;
+
+static void display(void);
 static void quit(int signal);
 static void show_help(void);
 
+
+static void display() {
+	unsigned int nb_logs = 0;
+	struct log * logs = log_get(&nb_logs);
+
+	unsigned int nb_working_workers = 0, nb_total_workers = 0;
+	struct worker * workers = worker_get(&nb_working_workers, &nb_total_workers);
+
+	unsigned int show_nb_logs = row - nb_working_workers - 2;
+	while (nb_logs > show_nb_logs) {
+		logs = logs->next;
+		nb_logs--;
+	}
+
+	unsigned int offset = show_nb_logs - nb_logs, i;
+	for (i = 0; i < nb_logs; i++) {
+		mvprintw(i + offset, 0, "%s", logs->message);
+		logs = logs->next;
+	}
+	log_release();
+
+	offset += i;
+	unsigned int j;
+	for (i = 0, j = 0; i < nb_working_workers; i++, j++) {
+		struct worker * worker = workers + j;
+		while (worker->status != worker_status_running)
+			worker = workers + ++j;
+
+		mvprintw(i + offset, 0, "#%lu %.0f%%", 100 * worker->pct);
+	}
+	worker_release();
+
+	mvprintw(row - 1, 1, "pCopy");
+
+	refresh();
+}
 
 int main(int argc, char * argv[]) {
 	setlocale(LC_ALL, "");
@@ -82,7 +124,14 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
+	if (optind + 2 > argc) {
+		return 1;
+	}
+
+	worker_process(&argv[optind], argc - optind - 1, argv[argc - 1]);
+
 	mainScreen = initscr();
+	getmaxyx(stdscr, row, col);
 	keypad(stdscr, TRUE);
 	curs_set(0);
 	noecho();
@@ -96,12 +145,17 @@ int main(int argc, char * argv[]) {
 		init_pair(3, COLOR_YELLOW, COLOR_BLUE);
 	}
 
+	log_reserve_message(row);
+
 	signal(SIGINT, quit);
 
-	printw("foo");
+	mvprintw(row - 1, 1, "pCopy");
 	refresh();
 
-	sleep(5);
+	for (;;) {
+		sleep(2);
+		display();
+	}
 
 	endwin();
 

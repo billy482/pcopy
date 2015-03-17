@@ -219,8 +219,6 @@ static void * thread_pool_work(void * arg) {
 
 	pid_t tid = syscall(SYS_gettid);
 
-	log_write(gettext("thread_pool_work : starting new thread #%ld (pid: %d)"), th->thread, tid);
-
 	do {
 		if (th->name != NULL)
 			thread_pool_set_name(tid, th->name);
@@ -256,8 +254,6 @@ static void * thread_pool_work(void * arg) {
 
 		pthread_mutex_unlock(&th->lock);
 	} while (th->state == thread_pool_state_running);
-
-	log_write(gettext("thread_pool_work : thread #%ld is dead"), th->thread);
 
 	return NULL;
 }
