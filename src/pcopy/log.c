@@ -29,95 +29,109 @@
 *  Copyright (C) 2015, Guillaume Clercin <clercin.guillaume@gmail.com>       *
 \****************************************************************************/
 
-// getopt_long
-#include <getopt.h>
-// bindtextdomain, gettext, textdomain
-#include <libintl.h>
-// setlocale
-#include <locale.h>
-// curs_set, halfdelay, has_colors, keypad, initscr, init_pair,
-// newwin, noecho, nonl, start_color
-#include <ncurses.h>
-// signal
-#include <signal.h>
-// printf
+#define _GNU_SOURCE
+// pthread_mutex_lock, pthread_mutex_unlock
+#include <pthread.h>
+// open
+#include <fcntl.h>
+// va_end, va_start
+#include <stdarg.h>
+// asprintf, dprintf, vasprintf
 #include <stdio.h>
-// exit
-#include <unistd.h>
+// free, malloc
+#include <stdlib.h>
+// open
+#include <sys/stat.h>
+// gettimeofday
+#include <sys/time.h>
+// open
+#include <sys/types.h>
+// localtime_r, strftime
+#include <time.h>
 
-#include "pcopy.version"
+#include "log.h"
 
-static WINDOW * mainScreen = NULL;
-static WINDOW * headerWindow = NULL;
+static int log_fd = -1;
+static pthread_mutex_t log_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+static struct log * log_first = NULL, * log_last = NULL;
+static unsigned int log_nb_messages = 0;
+static unsigned int log_nb_reserved_messages = 16;
 
-static void quit(int signal);
-static void show_help(void);
 
-
-int main(int argc, char * argv[]) {
-	setlocale(LC_ALL, "");
-	bindtextdomain("pcopy", "/usr/share/locale/");
-	textdomain("pcopy");
-
-	enum {
-		OPT_HELP = 'h',
-	};
-
-	static struct option op[] = {
-		{ "help", 0, 0, OPT_HELP },
-
-		{ 0, 0, 0, 0 },
-	};
-
-	static int lo;
-	for (;;) {
-		int c = getopt_long(argc, argv, "h?", op, &lo);
-		if (c == -1)
-			break;
-
-		switch (c) {
-			case OPT_HELP:
-				show_help();
-				return 0;
-		}
-	}
-
-	mainScreen = initscr();
-	keypad(stdscr, TRUE);
-	curs_set(0);
-	noecho();
-	nonl();
-	halfdelay(150);
-	if (has_colors()) {
-		start_color();
-
-		init_pair(1, COLOR_WHITE, COLOR_BLUE);
-		init_pair(2, COLOR_GREEN, COLOR_BLUE);
-		init_pair(3, COLOR_YELLOW, COLOR_BLUE);
-	}
-
-	signal(SIGINT, quit);
-
-	printw("foo");
-	refresh();
-
-	sleep(5);
-
-	endwin();
-
-	return 0;
+struct log * log_get(unsigned int * nb_messages) {
+	pthread_mutex_lock(&log_lock);
+	if (nb_messages != NULL)
+		*nb_messages = log_nb_messages;
+	return log_first;
 }
 
-static void quit(int signal __attribute__((unused))) {
-	if (headerWindow)
-		delwin(headerWindow);
-	headerWindow = 0;
-	endwin();
-	_exit(0);
+void log_open_log_file(const char * filename) {
+	log_fd = open(filename, O_RDWR | O_APPEND | O_CREAT, 0644);
 }
 
-static void show_help() {
-	printf("pCopy (" PCOPY_VERSION ")\n");
-	printf(gettext("  -h, --help : Show this and exit\n\n"));
+void log_release() {
+	pthread_mutex_unlock(&log_lock);
+}
+
+void log_reserve_message(unsigned int nb_messages) {
+	pthread_mutex_lock(&log_lock);
+
+	while (nb_messages < log_nb_messages) {
+		free(log_first->message);
+		struct log * old = log_first;
+		log_first = old->next;
+		free(old);
+
+		log_nb_messages--;
+	}
+
+	if (log_first == NULL)
+		log_last = NULL;
+
+	log_nb_reserved_messages = nb_messages;
+
+	pthread_mutex_unlock(&log_lock);
+}
+
+void log_write(const char * format, ...) {
+	char * message;
+
+	va_list va;
+	va_start(va, format);
+	vasprintf(&message, format, va);
+	va_end(va);
+
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	struct tm tm;
+	localtime_r(&now.tv_sec, &tm);
+	char buffer[64];
+	strftime(buffer, 64, "%c", &tm);
+
+	pthread_mutex_lock(&log_lock);
+
+	if (log_fd > -1)
+		dprintf(log_fd, "%s %s\n", buffer, message);
+
+	struct log * log;
+	if (log_nb_messages == log_nb_reserved_messages) {
+		log = log_first;
+		log_first = log->next;
+	} else {
+		log = malloc(sizeof(struct log));
+		log_nb_messages++;
+	}
+
+	asprintf(&log->message, "%s %s\n", buffer, message);
+	log->next = NULL;
+
+	if (log_first == NULL)
+		log_first = log_last = log;
+	else
+		log_last = log_last->next = log;
+
+	pthread_mutex_unlock(&log_lock);
+
+	free(message);
 }
 

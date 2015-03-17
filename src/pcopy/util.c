@@ -29,95 +29,117 @@
 *  Copyright (C) 2015, Guillaume Clercin <clercin.guillaume@gmail.com>       *
 \****************************************************************************/
 
-// getopt_long
-#include <getopt.h>
-// bindtextdomain, gettext, textdomain
-#include <libintl.h>
-// setlocale
-#include <locale.h>
-// curs_set, halfdelay, has_colors, keypad, initscr, init_pair,
-// newwin, noecho, nonl, start_color
-#include <ncurses.h>
-// signal
-#include <signal.h>
-// printf
+// dirent
+#include <dirent.h>
+// open
+#include <fcntl.h>
+// sscanf
 #include <stdio.h>
-// exit
+// memmove, strlen
+#include <string.h>
+// open
+#include <sys/stat.h>
+// open
+#include <sys/types.h>
+// close, read
 #include <unistd.h>
 
-#include "pcopy.version"
+#include "util.h"
 
-static WINDOW * mainScreen = NULL;
-static WINDOW * headerWindow = NULL;
-
-static void quit(int signal);
-static void show_help(void);
+static int util_string_valid_utf8_char(const char * string);
+static int util_string_valid_utf8_char2(const unsigned char * ptr, unsigned short length);
 
 
-int main(int argc, char * argv[]) {
-	setlocale(LC_ALL, "");
-	bindtextdomain("pcopy", "/usr/share/locale/");
-	textdomain("pcopy");
+int util_basic_filter(const struct dirent * file) {
+	if (file->d_name[0] != '.')
+		return 1;
 
-	enum {
-		OPT_HELP = 'h',
-	};
+	if (file->d_name[1] == '\0')
+		return 0;
 
-	static struct option op[] = {
-		{ "help", 0, 0, OPT_HELP },
+	return file->d_name[1] != '.' || file->d_name[2] != '\0';
+}
 
-		{ 0, 0, 0, 0 },
-	};
+unsigned int util_nb_cpus() {
+	int fd = open("/sys/devices/system/cpu/present", O_RDONLY);
+	if (fd < 0)
+		return 1;
 
-	static int lo;
-	for (;;) {
-		int c = getopt_long(argc, argv, "h?", op, &lo);
-		if (c == -1)
+	char buffer[16];
+	ssize_t nb_read = read(fd, buffer, 16);
+	close(fd);
+
+	if (nb_read < 0)
+		return 1;
+
+	buffer[nb_read] = '\0';
+
+	unsigned int first, last;
+	int nb_parsed = sscanf(buffer, "%u-%u", &first, &last);
+
+	return nb_parsed == 2 ? last - first : 1;
+}
+
+void util_string_middle_elipsis(char * string, size_t length) {
+	size_t str_length = strlen(string);
+	if (str_length <= length)
+		return;
+
+	length--;
+
+	size_t used = 0;
+	char * ptrA = string;
+	char * ptrB = string + str_length;
+	while (used < length) {
+		int char_length = util_string_valid_utf8_char(ptrA);
+		if (char_length == 0)
+			return;
+
+		if (used + char_length > length)
 			break;
 
-		switch (c) {
-			case OPT_HELP:
-				show_help();
-				return 0;
-		}
+		used += char_length;
+		ptrA += char_length;
+
+		int offset = 1;
+		while (char_length = util_string_valid_utf8_char(ptrB - offset), ptrA < ptrB - offset && char_length == 0)
+			offset++;
+
+		if (char_length == 0)
+			return;
+
+		if (used + char_length > length)
+			break;
+
+		used += char_length;
+		ptrB -= char_length;
 	}
 
-	mainScreen = initscr();
-	keypad(stdscr, TRUE);
-	curs_set(0);
-	noecho();
-	nonl();
-	halfdelay(150);
-	if (has_colors()) {
-		start_color();
+	*ptrA = '~';
+	memmove(ptrA + 1, ptrB, strlen(ptrB) + 1);
+}
 
-		init_pair(1, COLOR_WHITE, COLOR_BLUE);
-		init_pair(2, COLOR_GREEN, COLOR_BLUE);
-		init_pair(3, COLOR_YELLOW, COLOR_BLUE);
-	}
+static int util_string_valid_utf8_char(const char * string) {
+	const unsigned char * ptr = (const unsigned char *) string;
+	if ((*ptr & 0x7F) == *ptr)
+		return 1;
+	else if ((*ptr & 0xBF) == *ptr)
+		return 0;
+	else if ((*ptr & 0xDF) == *ptr)
+		return ((ptr[1] & 0xBF) != ptr[1] || ((ptr[1] & 0x80) != 0x80)) ? 0 : 2;
+	else if ((*ptr & 0xEF) == *ptr)
+		return util_string_valid_utf8_char2(ptr, 2) ? 0 : 3;
+	else if ((*ptr & 0xF7) == *ptr)
+		return util_string_valid_utf8_char2(ptr, 3) ? 0 : 4;
+	else
+		return 0;
+}
 
-	signal(SIGINT, quit);
-
-	printw("foo");
-	refresh();
-
-	sleep(5);
-
-	endwin();
-
+static int util_string_valid_utf8_char2(const unsigned char * ptr, unsigned short length) {
+	unsigned short i;
+	for (i = 1; i <= length; i++)
+		if ((ptr[i] & 0xBF) != ptr[i] || ((ptr[i] & 0x80) != 0x80))
+			return 1;
 	return 0;
-}
-
-static void quit(int signal __attribute__((unused))) {
-	if (headerWindow)
-		delwin(headerWindow);
-	headerWindow = 0;
-	endwin();
-	_exit(0);
-}
-
-static void show_help() {
-	printf("pCopy (" PCOPY_VERSION ")\n");
-	printf(gettext("  -h, --help : Show this and exit\n\n"));
 }
 

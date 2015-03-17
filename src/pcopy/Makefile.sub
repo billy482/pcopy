@@ -2,7 +2,7 @@ PCOPY_SRC_DIR		:= src/pcopy
 
 PCOPY_BIN			:= bin/pcopy
 PCOPY_CFLAG			:= -fPIC -pthread
-PCOPY_LD			:= -pthread
+PCOPY_LD			:= -pthread -lncurses
 
 PCOPY_DEPEND_LIB	:=
 

@@ -29,95 +29,74 @@
 *  Copyright (C) 2015, Guillaume Clercin <clercin.guillaume@gmail.com>       *
 \****************************************************************************/
 
-// getopt_long
-#include <getopt.h>
-// bindtextdomain, gettext, textdomain
-#include <libintl.h>
-// setlocale
-#include <locale.h>
-// curs_set, halfdelay, has_colors, keypad, initscr, init_pair,
-// newwin, noecho, nonl, start_color
-#include <ncurses.h>
-// signal
-#include <signal.h>
-// printf
+// open
+#include <fcntl.h>
+// dprintf
 #include <stdio.h>
-// exit
+// memmove, strchr, strdup
+#include <string.h>
+// open
+#include <sys/stat.h>
+// lseek, open
+#include <sys/types.h>
+// lseek
 #include <unistd.h>
 
-#include "pcopy.version"
+#include "checksum.h"
 
-static WINDOW * mainScreen = NULL;
-static WINDOW * headerWindow = NULL;
-
-static void quit(int signal);
-static void show_help(void);
+static int checksum_fd = -1;
 
 
-int main(int argc, char * argv[]) {
-	setlocale(LC_ALL, "");
-	bindtextdomain("pcopy", "/usr/share/locale/");
-	textdomain("pcopy");
+void checksum_add(const char * digest, const char * path) {
+	dprintf(checksum_fd, "%s  %s\n", digest, path);
+}
 
-	enum {
-		OPT_HELP = 'h',
-	};
+void checksum_create(const char * filename) {
+	checksum_fd = open(filename, O_RDWR | O_TRUNC | O_CREAT, 0644);
+}
 
-	static struct option op[] = {
-		{ "help", 0, 0, OPT_HELP },
+bool checksum_parse(char ** digest, char ** path) {
+	static char buffer[16384];
+	static ssize_t nb_buffer_used = 0;
 
-		{ 0, 0, 0, 0 },
-	};
+	char * end = NULL;
+	if (nb_buffer_used > 0)
+		end = strchr(buffer, '\n');
 
-	static int lo;
 	for (;;) {
-		int c = getopt_long(argc, argv, "h?", op, &lo);
-		if (c == -1)
-			break;
+		if (end != NULL) {
+			char * space = strchr(buffer, ' ');
+			if (space == NULL)
+				return false;
 
-		switch (c) {
-			case OPT_HELP:
-				show_help();
-				return 0;
+			*space = '\0';
+			*digest = strdup(buffer);
+
+			space += 2;
+			*end = '\0';
+			*path = strdup(space);
+
+			end++;
+			nb_buffer_used -= end - buffer;
+			memmove(buffer, end, nb_buffer_used);
+
+			return true;
 		}
+
+		ssize_t nb_read = read(checksum_fd, buffer + nb_buffer_used, 16384 - nb_buffer_used);
+		if (nb_read < 0)
+			return false;
+
+		if (nb_read == 0)
+			end = buffer + nb_buffer_used;
+		else
+			nb_buffer_used += nb_read;
 	}
 
-	mainScreen = initscr();
-	keypad(stdscr, TRUE);
-	curs_set(0);
-	noecho();
-	nonl();
-	halfdelay(150);
-	if (has_colors()) {
-		start_color();
-
-		init_pair(1, COLOR_WHITE, COLOR_BLUE);
-		init_pair(2, COLOR_GREEN, COLOR_BLUE);
-		init_pair(3, COLOR_YELLOW, COLOR_BLUE);
-	}
-
-	signal(SIGINT, quit);
-
-	printw("foo");
-	refresh();
-
-	sleep(5);
-
-	endwin();
-
-	return 0;
+	return false;
 }
 
-static void quit(int signal __attribute__((unused))) {
-	if (headerWindow)
-		delwin(headerWindow);
-	headerWindow = 0;
-	endwin();
-	_exit(0);
-}
-
-static void show_help() {
-	printf("pCopy (" PCOPY_VERSION ")\n");
-	printf(gettext("  -h, --help : Show this and exit\n\n"));
+void checksum_rewind() {
+	lseek(checksum_fd, 0, SEEK_SET);
 }
 
