@@ -33,7 +33,7 @@
 #include <fcntl.h>
 // dprintf
 #include <stdio.h>
-// memmove, strchr, strdup
+// memmove, strcmp, strchr, strdup
 #include <string.h>
 // open
 #include <sys/stat.h>
@@ -115,5 +115,19 @@ bool checksum_parse(char ** digest, char ** path) {
 
 void checksum_rewind() {
 	lseek(checksum_fd, 0, SEEK_SET);
+}
+
+bool checksum_set_default(const char * checksum) {
+	if (checksum == NULL)
+		return false;
+
+	struct checksum_driver * driver = checksum_drivers;
+	for (; driver->name != NULL; driver++)
+		if (strcmp(checksum, driver->name) == 0) {
+			checksum_default_driver = driver->new_checksum;
+			return true;
+		}
+
+	return false;
 }
 

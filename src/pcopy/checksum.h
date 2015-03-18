@@ -58,6 +58,7 @@ struct checksum_driver * checksum_digests(void);
 struct checksum * checksum_get_checksum(void);
 bool checksum_parse(char ** digest, char ** path);
 void checksum_rewind(void);
+bool checksum_set_default(const char * checksum);
 
 #endif
 

@@ -49,6 +49,7 @@
 // exit
 #include <unistd.h>
 
+#include "checksum.h"
 #include "log.h"
 #include "util.h"
 #include "worker.h"
@@ -133,22 +134,46 @@ int main(int argc, char * argv[]) {
 	textdomain("pcopy");
 
 	enum {
-		OPT_HELP = 'h',
+		OPT_CHECKSUM = 'c',
+		OPT_HELP     = 'h',
 	};
 
 	static struct option op[] = {
-		{ "help", 0, 0, OPT_HELP },
+		{ "checksum", 1, 0, OPT_CHECKSUM },
+		{ "help",     0, 0, OPT_HELP },
 
-		{ 0, 0, 0, 0 },
+		{ NULL, 0, 0, 0 },
 	};
 
 	static int lo;
 	for (;;) {
-		int c = getopt_long(argc, argv, "h?", op, &lo);
+		int c = getopt_long(argc, argv, "c:h?", op, &lo);
 		if (c == -1)
 			break;
 
 		switch (c) {
+			case OPT_CHECKSUM:
+				if (!strcmp(optarg, "help")) {
+					struct checksum_driver * drivers = checksum_digests();
+
+					printf(gettext("Available checksums: "));
+					unsigned int i;
+					for (i = 0; drivers->name != NULL; i++, drivers++) {
+						if (i > 0)
+							printf(", ");
+						printf("'%s'", drivers->name);
+					}
+					printf("\n");
+
+					return 0;
+				}
+
+				if (!checksum_set_default(optarg)) {
+					printf("Error: hash function '%s' not found\n", optarg);
+					return 1;
+				}
+				break;
+
 			case OPT_HELP:
 				show_help();
 				return 0;
@@ -203,6 +228,8 @@ static void quit(int signal __attribute__((unused))) {
 
 static void show_help() {
 	printf("pCopy (" PCOPY_VERSION ")\n");
-	printf(gettext("  -h, --help : Show this and exit\n\n"));
+	printf(gettext("  -c, --checksum <hash> : Use <hash> as hash function,\n"));
+	printf(gettext("                          Use 'help' to show available hash functions\n"));
+	printf(gettext("  -h, --help            : Show this and exit\n\n"));
 }
 
