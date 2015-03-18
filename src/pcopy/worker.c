@@ -189,7 +189,7 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 	}
 
 	char * output = NULL;
-	asprintf(&output, "%s/%s", worker_output, partial_path);
+	asprintf(&output, "%s%s", worker_output, partial_path);
 
 	if (S_ISBLK(info.st_mode)) {
 		log_write(gettext("#%lu ~ create block device '%s', major: %d, minor: %d"), i_job, output, (int) info.st_rdev >> 8, (int) info.st_rdev & 0xFF);

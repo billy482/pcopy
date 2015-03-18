@@ -42,10 +42,15 @@
 #include <signal.h>
 // printf
 #include <stdio.h>
+// free
+#include <stdlib.h>
+// memset, strdup, strlen
+#include <string.h>
 // exit
 #include <unistd.h>
 
 #include "log.h"
+#include "util.h"
 #include "worker.h"
 
 #include "pcopy.version"
@@ -67,31 +72,55 @@ static void display() {
 	unsigned int nb_working_workers = 0, nb_total_workers = 0;
 	struct worker * workers = worker_get(&nb_working_workers, &nb_total_workers);
 
-	unsigned int show_nb_logs = row - nb_working_workers - 2;
+	unsigned int show_nb_logs = row - nb_working_workers - 1;
 	while (nb_logs > show_nb_logs) {
 		logs = logs->next;
 		nb_logs--;
 	}
 
+	char line[col];
+	memset(line, ' ', col);
+
 	unsigned int offset = show_nb_logs - nb_logs, i;
 	for (i = 0; i < nb_logs; i++) {
-		mvprintw(i + offset, 0, "%s", logs->message);
+		mvprintw(i + offset, 0, line);
+
+		if (util_string_length(logs->message) > col) {
+			char * message = strdup(logs->message);
+			util_string_middle_elipsis(message, col);
+			mvprintw(i + offset, 0, "%s", message);
+			free(message);
+		} else
+			mvprintw(i + offset, 0, "%s", logs->message);
+
 		logs = logs->next;
 	}
 	log_release();
 
-	offset += i;
+	offset = row - nb_working_workers - 1;
 	unsigned int j;
 	for (i = 0, j = 0; i < nb_working_workers; i++, j++) {
 		struct worker * worker = workers + j;
 		while (worker->status != worker_status_running)
 			worker = workers + ++j;
 
-		mvprintw(i + offset, 0, "#%lu %.0f%%", 100 * worker->pct);
+		mvprintw(i + offset, 0, line);
+
+		int width = col * worker->pct;
+		line[width] = '\0';
+
+		attron(COLOR_PAIR(2));
+		mvprintw(i + offset, 0, line);
+		line[width] = ' ';
+
+		mvprintw(i + offset, 0, "#%lu %.0f%%", worker->job, 100 * worker->pct);
+
+		attroff(COLOR_PAIR(2));
 	}
 	worker_release();
 
-	mvprintw(row - 1, 1, "pCopy");
+	mvprintw(row - 1, 0, line);
+	mvprintw(row - 1, 1, "pCopy %ux%u", row, col);
 
 	refresh();
 }
@@ -141,7 +170,7 @@ int main(int argc, char * argv[]) {
 		start_color();
 
 		init_pair(1, COLOR_WHITE, COLOR_BLUE);
-		init_pair(2, COLOR_GREEN, COLOR_BLUE);
+		init_pair(2, COLOR_WHITE, COLOR_RED);
 		init_pair(3, COLOR_YELLOW, COLOR_BLUE);
 	}
 

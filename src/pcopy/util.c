@@ -80,6 +80,23 @@ unsigned int util_nb_cpus() {
 	return nb_parsed == 2 ? last - first : 1;
 }
 
+size_t util_string_length(const char * string) {
+	if (string == NULL)
+		return 0;
+
+	size_t length = 0;
+	while (*string != '\0') {
+		int char_length = util_string_valid_utf8_char(string);
+		if (char_length == 0)
+			break;
+
+		length++;
+		string += char_length;
+	}
+
+	return length;
+}
+
 void util_string_middle_elipsis(char * string, size_t length) {
 	size_t str_length = strlen(string);
 	if (str_length <= length)

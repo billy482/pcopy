@@ -122,7 +122,7 @@ void log_write(const char * format, ...) {
 		log_nb_messages++;
 	}
 
-	asprintf(&log->message, "%s %s\n", buffer, message);
+	asprintf(&log->message, "%s %s", buffer, message);
 	log->next = NULL;
 
 	if (log_first == NULL)

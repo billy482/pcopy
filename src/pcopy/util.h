@@ -32,10 +32,14 @@
 #ifndef __PCOPY_UTIL_H__
 #define __PCOPY_UTIL_H__
 
+// size_t
+#include <sys/types.h>
+
 struct dirent;
 
 int util_basic_filter(const struct dirent * file);
 unsigned int util_nb_cpus(void);
+size_t util_string_length(const char * string);
 void util_string_middle_elipsis(char * string, size_t length);
 
 #endif
