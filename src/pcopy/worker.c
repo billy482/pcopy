@@ -105,7 +105,7 @@ void worker_process(char * inputs[], unsigned int nb_inputs, const char * output
 	worker_output = output;
 	worker_output_length = strlen(worker_output);
 
-	thread_pool_run("worker", worker_process_do, NULL);
+	thread_pool_run("main worker", worker_process_do, NULL);
 }
 
 static void worker_process_checksum(void * arg) {
@@ -301,6 +301,8 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 
 	worker_running = true;
 
+	log_write(gettext("Start process"));
+
 	workers = calloc(nb_cpus, sizeof(struct worker));
 	worker_nb_workers = nb_cpus;
 
@@ -341,14 +343,19 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 					free(worker->src_file);
 					free(worker->dest_file);
 					free(worker->digest);
+					free(worker->description);
 					worker->src_file = worker->dest_file = worker->digest = NULL;
+					worker->description = NULL;
 				}
+
+			struct checksum_driver * chck_dr = checksum_get_default();
 
 			worker->job = i_job;
 			worker->status = worker_status_running;
 			worker->src_file = filename;
 			worker->dest_file = NULL;
 			worker->digest = digest;
+			asprintf(&worker->description, gettext("recompute %s of '%s'"), chck_dr->name, filename);
 			worker->pct = 0;
 
 			pthread_mutex_unlock(&worker_lock);
@@ -369,6 +376,8 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 			sem_getvalue(&worker_jobs, &free_job);
 		}
 	}
+
+	log_write(gettext("Process finished"));
 
 	worker_running = false;
 }
@@ -499,7 +508,9 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 
 				free(worker->src_file);
 				free(worker->dest_file);
+				free(worker->description);
 				worker->src_file = worker->dest_file = NULL;
+				worker->description = NULL;
 			}
 
 		worker->job = i_job;
@@ -507,6 +518,7 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 		worker->src_file = strdup(full_path);
 		worker->dest_file = strdup(output);
 		worker->digest = NULL;
+		asprintf(&worker->description, gettext("copy from '%s' to '%s'"), full_path, output);
 		worker->pct = 0;
 
 		pthread_mutex_unlock(&worker_lock);

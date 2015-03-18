@@ -113,7 +113,7 @@ static void display() {
 		char buffer[col + 1];
 		memset(buffer, ' ', col);
 		buffer[col] = '\0';
-		ssize_t nb_write = snprintf(buffer, col - 1, "#%lu %.0f%%", worker->job, 100 * worker->pct);
+		ssize_t nb_write = snprintf(buffer, col - 1, "#%lu %.0f%% : %s", worker->job, 100 * worker->pct, worker->description);
 		buffer[nb_write] = ' ';
 
 		int width = col * worker->pct;

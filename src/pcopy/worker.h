@@ -42,6 +42,8 @@ struct worker {
 	char * dest_file;
 	char * digest;
 
+	char * description;
+
 	volatile float pct;
 
 	volatile enum {
