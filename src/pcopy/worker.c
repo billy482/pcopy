@@ -223,7 +223,7 @@ static void worker_process_copy(void * arg) {
 	chck->ops->free(chck);
 
 	if (differ_checksum)
-		checksum_add(computed, worker->src_file);
+		checksum_add(computed, worker->dest_file);
 
 	if (nb_read < 0) {
 		log_write(gettext("#%lu ! error fatal, error while reading from '%s' because %m"), worker->job, worker->src_file);
