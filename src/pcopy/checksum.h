@@ -34,9 +34,28 @@
 
 // bool
 #include <stdbool.h>
+// ssize_t
+#include <sys/types.h>
+
+struct checksum {
+	struct checksum_ops {
+		char * (*digest)(struct checksum * checksum) __attribute__((nonnull,warn_unused_result));
+		void (*free)(struct checksum * checksum) __attribute__((nonnull));
+		ssize_t (*update)(struct checksum * checksum, const void * data, ssize_t length) __attribute__((nonnull(1)));
+	} * ops;
+
+	void * data;
+};
+
+struct checksum_driver {
+	char * name;
+	struct checksum * (*new_checksum)(void) __attribute__((warn_unused_result));
+};
 
 void checksum_add(const char * digest, const char * path);
 void checksum_create(const char * filename);
+struct checksum_driver * checksum_digests(void);
+struct checksum * checksum_get_checksum(void);
 bool checksum_parse(char ** digest, char ** path);
 void checksum_rewind(void);
 

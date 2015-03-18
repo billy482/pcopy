@@ -29,91 +29,83 @@
 *  Copyright (C) 2015, Guillaume Clercin <clercin.guillaume@gmail.com>       *
 \****************************************************************************/
 
-// open
-#include <fcntl.h>
-// dprintf
-#include <stdio.h>
-// memmove, strchr, strdup
+// free, malloc
+#include <stdlib.h>
+// 
+#include <nettle/md5.h>
+// strdup
 #include <string.h>
-// open
-#include <sys/stat.h>
-// lseek, open
-#include <sys/types.h>
-// lseek
-#include <unistd.h>
 
-#include "checksum.h"
-#include "checksum/digest.h"
+#include "digest.h"
 
-static int checksum_fd = -1;
+struct checksum_md5 {
+	struct md5_ctx md5;
+	char digest[MD5_DIGEST_SIZE * 2 + 1];
+};
 
-static struct checksum * (*checksum_default_driver)(void) = checksum_md5_new_checksum;
+static char * checksum_md5_digest(struct checksum * checksum);
+static void checksum_md5_free(struct checksum * checksum);
+static ssize_t checksum_md5_update(struct checksum * checksum, const void * data, ssize_t length);
 
-static struct checksum_driver checksum_drivers[] = {
-	{ "md5", checksum_md5_new_checksum },
-
-	{ NULL, NULL },
+static struct checksum_ops checksum_md5_ops = {
+	.digest = checksum_md5_digest,
+	.free   = checksum_md5_free,
+	.update = checksum_md5_update,
 };
 
 
-void checksum_add(const char * digest, const char * path) {
-	dprintf(checksum_fd, "%s  %s\n", digest, path);
+static char * checksum_md5_digest(struct checksum * checksum) {
+	if (checksum == NULL)
+		return NULL;
+
+	struct checksum_md5 * self = checksum->data;
+	if (self->digest[0] != '\0')
+		return strdup(self->digest);
+
+	struct md5_ctx md5 = self->md5;
+	unsigned char digest[MD5_DIGEST_SIZE];
+	md5_digest(&md5, MD5_DIGEST_SIZE, digest);
+
+	digest_convert_to_hex(digest, MD5_DIGEST_SIZE, self->digest);
+
+	return strdup(self->digest);
 }
 
-void checksum_create(const char * filename) {
-	checksum_fd = open(filename, O_RDWR | O_TRUNC | O_CREAT, 0644);
+static void checksum_md5_free(struct checksum * checksum) {
+	if (checksum == NULL)
+		return;
+
+	struct checksum_md5 * self = checksum->data;
+
+	unsigned char digest[MD5_DIGEST_SIZE];
+	md5_digest(&self->md5, MD5_DIGEST_SIZE, digest);
+
+	free(self);
+
+	checksum->data = NULL;
+	checksum->ops = NULL;
+
+	free(checksum);
 }
 
-struct checksum_driver * checksum_digests() {
-	return checksum_drivers;
+struct checksum * checksum_md5_new_checksum() {
+	struct checksum * checksum = malloc(sizeof(struct checksum));
+	checksum->ops = &checksum_md5_ops;
+
+	struct checksum_md5 * self = malloc(sizeof(struct checksum_md5));
+	md5_init(&self->md5);
+	*self->digest = '\0';
+
+	checksum->data = self;
+	return checksum;
 }
 
-struct checksum * checksum_get_checksum() {
-	return checksum_default_driver();
-}
+static ssize_t checksum_md5_update(struct checksum * checksum, const void * data, ssize_t length) {
+	if (checksum == NULL || data == NULL || length < 1)
+		return -1;
 
-bool checksum_parse(char ** digest, char ** path) {
-	static char buffer[16384];
-	static ssize_t nb_buffer_used = 0;
-
-	char * end = NULL;
-	if (nb_buffer_used > 0)
-		end = strchr(buffer, '\n');
-
-	for (;;) {
-		if (end != NULL) {
-			char * space = strchr(buffer, ' ');
-			if (space == NULL)
-				return false;
-
-			*space = '\0';
-			*digest = strdup(buffer);
-
-			space += 2;
-			*end = '\0';
-			*path = strdup(space);
-
-			end++;
-			nb_buffer_used -= end - buffer;
-			memmove(buffer, end, nb_buffer_used);
-
-			return true;
-		}
-
-		ssize_t nb_read = read(checksum_fd, buffer + nb_buffer_used, 16384 - nb_buffer_used);
-		if (nb_read < 0)
-			return false;
-
-		if (nb_read == 0)
-			end = buffer + nb_buffer_used;
-		else
-			nb_buffer_used += nb_read;
-	}
-
-	return false;
-}
-
-void checksum_rewind() {
-	lseek(checksum_fd, 0, SEEK_SET);
+	struct checksum_md5 * self = checksum->data;
+	md5_update(&self->md5, length, data);
+	return length;
 }
 

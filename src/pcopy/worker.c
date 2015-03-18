@@ -72,6 +72,7 @@ static unsigned int worker_nb_workers = 0;
 static pthread_mutex_t worker_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 static void worker_process_child(void * arg);
+static bool worker_process_copy(struct worker * worker, char ** digest);
 static void worker_process_do(void * arg);
 static int worker_process_do2(const char * partial_path, const char * full_path);
 
@@ -104,24 +105,42 @@ void worker_process(char * inputs[], unsigned int nb_inputs, const char * output
 static void worker_process_child(void * arg) {
 	struct worker * worker = arg;
 
+	char * digest = NULL;
+	bool ok = worker_process_copy(worker, &digest);
+
+	if (ok) {
+	}
+
+	free(digest);
+
+	worker->status = worker_status_finished;
+
+	pthread_mutex_lock(&worker_lock);
+	pthread_mutex_unlock(&worker_lock);
+	sem_post(&worker_jobs);
+}
+
+static bool worker_process_copy(struct worker * worker, char ** digest) {
 	log_write(gettext("#%lu @ copy regular file from '%s' to '%s'"), worker->job, worker->src_file, worker->dest_file);
 
 	int fd_in = open(worker->src_file, O_RDONLY);
 	if (fd_in < 0) {
 		log_write(gettext("#%lu ! error fatal, failed to open '%s' for reading because %m"), worker->job, worker->src_file);
-		goto error;
+		return false;
 	}
 
 	struct stat info;
 	if (fstat(fd_in, &info) != 0) {
 		log_write(gettext("#%lu ! error fatal, failed to get information of '%s' because %m"), worker->job, worker->src_file);
-		goto error_close_in;
+		close(fd_in);
+		return false;
 	}
 
 	int fd_out = open(worker->dest_file, O_WRONLY | O_CREAT | O_TRUNC, info.st_mode);
 	if (fd_out < 0) {
 		log_write(gettext("#%lu ! error fatal, failed to open '%s' for writing because %m"), worker->job, worker->dest_file);
-		goto error_close_in;
+		close(fd_in);
+		return false;
 	}
 
 	if (fchown(fd_out, info.st_uid, info.st_gid) != 0)
@@ -133,32 +152,37 @@ static void worker_process_child(void * arg) {
 		ssize_t nb_write = write(fd_out, buffer, nb_read);
 		if (nb_write < 0) {
 			log_write(gettext("#%lu ! error fatal, error while writing from '%s' because %m"), worker->job, worker->dest_file);
-			goto error_close_out;
+			close(fd_in);
+			close(fd_out);
+			return false;
 		}
 
 		nb_total_read += nb_read;
 
 		float done = nb_total_read;
 		worker->pct = done / info.st_size;
+
+		usleep(100);
 	}
 
 	if (nb_read < 0) {
 		log_write(gettext("#%lu ! error fatal, error while reading from '%s' because %m"), worker->job, worker->src_file);
-		goto error_close_out;
+		close(fd_in);
+		close(fd_out);
+		return false;
 	}
 
-error_close_out:
+	if (fsync(fd_out) != 0) {
+		log_write(gettext("#%lu ! error while fsyncing from '%s' because %m"), worker->job, worker->dest_file);
+		close(fd_in);
+		close(fd_out);
+		return false;
+	}
+
+	close(fd_in);
 	close(fd_out);
 
-error_close_in:
-	close(fd_in);
-
-error:
-	worker->status = worker_status_finished;
-
-	pthread_mutex_lock(&worker_lock);
-	pthread_mutex_unlock(&worker_lock);
-	sem_post(&worker_jobs);
+	return true;
 }
 
 static void worker_process_do(void * arg __attribute__((unused))) {
