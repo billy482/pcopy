@@ -40,7 +40,7 @@
 #include <ncurses.h>
 // signal
 #include <signal.h>
-// printf
+// printf, snprintf
 #include <stdio.h>
 // free
 #include <stdlib.h>
@@ -106,16 +106,18 @@ static void display() {
 
 		mvprintw(i + offset, 0, line);
 
+		char buffer[col + 1];
+		memset(buffer, ' ', col);
+		buffer[col] = '\0';
+		ssize_t nb_write = snprintf(buffer, col - 1, "#%lu %.0f%%", worker->job, 100 * worker->pct);
+		buffer[nb_write] = ' ';
+
 		int width = col * worker->pct;
-		line[width] = '\0';
 
 		attron(COLOR_PAIR(2));
-		mvprintw(i + offset, 0, line);
-		line[width] = ' ';
-
-		mvprintw(i + offset, 0, "#%lu %.0f%%", worker->job, 100 * worker->pct);
-
+		mvprintw(i + offset, 0, "%*s", width, buffer);
 		attroff(COLOR_PAIR(2));
+		mvprintw(i + offset, width, "%s", buffer + width);
 	}
 	worker_release();
 

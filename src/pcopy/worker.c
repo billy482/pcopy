@@ -103,7 +103,6 @@ void worker_process(char * inputs[], unsigned int nb_inputs, const char * output
 
 static void worker_process_child(void * arg) {
 	struct worker * worker = arg;
-	worker->status = worker_status_running;
 
 	log_write(gettext("#%lu @ copy regular file from '%s' to '%s'"), worker->job, worker->src_file, worker->dest_file);
 
@@ -299,11 +298,16 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 				worker = workers + i;
 
 		for (i = 0; i < worker_nb_workers && worker == NULL; i++)
-			if (workers[i].status == worker_status_finished)
+			if (workers[i].status == worker_status_finished) {
 				worker = workers + i;
 
+				free(worker->src_file);
+				free(worker->dest_file);
+				worker->src_file = worker->dest_file = NULL;
+			}
+
 		worker->job = i_job;
-		worker->status = worker_status_init;
+		worker->status = worker_status_running;
 		worker->src_file = strdup(full_path);
 		worker->dest_file = strdup(output);
 		worker->pct = 0;
