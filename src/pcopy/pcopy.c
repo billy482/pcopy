@@ -79,8 +79,9 @@ static void display() {
 		nb_logs--;
 	}
 
-	char line[col];
+	char line[col + 1];
 	memset(line, ' ', col);
+	line[col] = '\0';
 
 	unsigned int offset = show_nb_logs - nb_logs, i;
 	for (i = 0; i < nb_logs; i++) {

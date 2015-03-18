@@ -73,7 +73,7 @@ static unsigned int worker_nb_workers = 0;
 static pthread_mutex_t worker_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 static void worker_process_child(void * arg);
-static bool worker_process_copy(struct worker * worker, char ** digest);
+static bool worker_process_copy(struct worker * worker);
 static void worker_process_do(void * arg);
 static int worker_process_do2(const char * partial_path, const char * full_path);
 
@@ -106,13 +106,10 @@ void worker_process(char * inputs[], unsigned int nb_inputs, const char * output
 static void worker_process_child(void * arg) {
 	struct worker * worker = arg;
 
-	char * digest = NULL;
-	bool ok = worker_process_copy(worker, &digest);
+	bool ok = worker_process_copy(worker);
 
 	if (ok) {
 	}
-
-	free(digest);
 
 	worker->status = worker_status_finished;
 
@@ -121,7 +118,7 @@ static void worker_process_child(void * arg) {
 	sem_post(&worker_jobs);
 }
 
-static bool worker_process_copy(struct worker * worker, char ** digest) {
+static bool worker_process_copy(struct worker * worker) {
 	log_write(gettext("#%lu @ copy regular file from '%s' to '%s'"), worker->job, worker->src_file, worker->dest_file);
 
 	struct checksum_driver * chck_dr = checksum_get_default();
@@ -179,8 +176,6 @@ static bool worker_process_copy(struct worker * worker, char ** digest) {
 
 	if (differ_checksum)
 		checksum_add(chck_dr->name, computed);
-	else if (digest != NULL)
-		*digest = computed;
 
 	if (nb_read < 0) {
 		log_write(gettext("#%lu ! error fatal, error while reading from '%s' because %m"), worker->job, worker->src_file);
