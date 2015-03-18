@@ -137,7 +137,7 @@ static bool worker_process_copy(struct worker * worker) {
 		return false;
 	}
 
-	int fd_out = open(worker->dest_file, O_WRONLY | O_CREAT | O_TRUNC, info.st_mode);
+	int fd_out = open(worker->dest_file, O_RDWR | O_CREAT | O_TRUNC, info.st_mode);
 	if (fd_out < 0) {
 		log_write(gettext("#%lu ! error fatal, failed to open '%s' for writing because %m"), worker->job, worker->dest_file);
 		close(fd_in);
@@ -184,6 +184,7 @@ static bool worker_process_copy(struct worker * worker) {
 		return false;
 	}
 
+	log_write(gettext("#%lu > flush file '%s'"), worker->job, worker->dest_file);
 	if (fsync(fd_out) != 0) {
 		log_write(gettext("#%lu ! error while fsyncing from '%s' because %m"), worker->job, worker->dest_file);
 		close(fd_in);
