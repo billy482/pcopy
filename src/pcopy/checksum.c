@@ -113,6 +113,10 @@ bool checksum_parse(char ** digest, char ** path) {
 			end = buffer + nb_buffer_used;
 		else
 			nb_buffer_used += nb_read;
+
+		end = strchr(buffer, '\n');
+		if (end == NULL)
+			break;
 	}
 
 	return false;

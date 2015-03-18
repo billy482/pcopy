@@ -73,8 +73,8 @@ static unsigned int worker_nb_workers = 0;
 
 static pthread_mutex_t worker_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
-static void worker_process_child(void * arg);
-static bool worker_process_copy(struct worker * worker);
+static void worker_process_checksum(void * arg);
+static void worker_process_copy(void * arg);
 static void worker_process_do(void * arg);
 static int worker_process_do2(const char * partial_path, const char * full_path);
 
@@ -108,14 +108,56 @@ void worker_process(char * inputs[], unsigned int nb_inputs, const char * output
 	thread_pool_run("worker", worker_process_do, NULL);
 }
 
-static void worker_process_child(void * arg) {
+static void worker_process_checksum(void * arg) {
 	struct worker * worker = arg;
 
-	bool ok = worker_process_copy(worker);
+	struct checksum_driver * chck_dr = checksum_get_default();
 
-	if (ok) {
+	log_write(gettext("#%lu # recompute %s of '%s'"), worker->job, chck_dr->name, worker->src_file);
+
+	int fd_in = open(worker->src_file, O_RDONLY);
+	if (fd_in < 0) {
+		log_write(gettext("#%lu ! error fatal, failed to open '%s' for reading because %m"), worker->job, worker->src_file);
+		goto checksum_finished;
 	}
 
+	struct stat info;
+	if (fstat(fd_in, &info) != 0) {
+		log_write(gettext("#%lu ! error fatal, failed to get information of '%s' because %m"), worker->job, worker->src_file);
+		close(fd_in);
+		goto checksum_finished;
+	}
+
+	struct checksum * chck = chck_dr->new_checksum();
+
+	char buffer[16384];
+	ssize_t nb_read, nb_total_read = 0;
+	while (nb_read = read(fd_in, buffer, 16384), nb_read > 0) {
+		chck->ops->update(chck, buffer, nb_read);
+
+		nb_total_read += nb_read;
+
+		float done = nb_total_read;
+		worker->pct = done / info.st_size;
+	}
+
+	if (nb_read < 0)
+		log_write(gettext("#%lu ! error fatal, error while reading from '%s' because %m"), worker->job, worker->src_file);
+
+	close(fd_in);
+
+	char * computed = chck->ops->digest(chck);
+	log_write(gettext("#%lu # compute %s of '%s'"), worker->job, chck_dr->name, computed);
+	chck->ops->free(chck);
+
+	if (strcmp(computed, worker->digest) == 0)
+		log_write(gettext("#%lu = digests match (digest: %s) '%s'"), worker->job, computed, worker->src_file);
+	else
+		log_write(gettext("#%lu ≠ digests mismatch between 'src file'[%s] and '%s'[%s]"), worker->job, worker->digest, worker->src_file, computed);
+
+	free(computed);
+
+checksum_finished:
 	worker->status = worker_status_finished;
 
 	pthread_mutex_lock(&worker_lock);
@@ -123,7 +165,9 @@ static void worker_process_child(void * arg) {
 	sem_post(&worker_jobs);
 }
 
-static bool worker_process_copy(struct worker * worker) {
+static void worker_process_copy(void * arg) {
+	struct worker * worker = arg;
+
 	log_write(gettext("#%lu @ copy regular file from '%s' to '%s'"), worker->job, worker->src_file, worker->dest_file);
 
 	struct checksum_driver * chck_dr = checksum_get_default();
@@ -132,21 +176,21 @@ static bool worker_process_copy(struct worker * worker) {
 	int fd_in = open(worker->src_file, O_RDONLY);
 	if (fd_in < 0) {
 		log_write(gettext("#%lu ! error fatal, failed to open '%s' for reading because %m"), worker->job, worker->src_file);
-		return false;
+		goto copy_finished;
 	}
 
 	struct stat info;
 	if (fstat(fd_in, &info) != 0) {
 		log_write(gettext("#%lu ! error fatal, failed to get information of '%s' because %m"), worker->job, worker->src_file);
 		close(fd_in);
-		return false;
+		goto copy_finished;
 	}
 
 	int fd_out = open(worker->dest_file, O_RDWR | O_CREAT | O_TRUNC, info.st_mode);
 	if (fd_out < 0) {
 		log_write(gettext("#%lu ! error fatal, failed to open '%s' for writing because %m"), worker->job, worker->dest_file);
 		close(fd_in);
-		return false;
+		goto copy_finished;
 	}
 
 	if (fchown(fd_out, info.st_uid, info.st_gid) != 0)
@@ -162,7 +206,7 @@ static bool worker_process_copy(struct worker * worker) {
 			log_write(gettext("#%lu ! error fatal, error while writing from '%s' because %m"), worker->job, worker->dest_file);
 			close(fd_in);
 			close(fd_out);
-			return false;
+			goto copy_finished;
 		}
 
 		nb_total_read += nb_read;
@@ -180,13 +224,13 @@ static bool worker_process_copy(struct worker * worker) {
 	chck->ops->free(chck);
 
 	if (differ_checksum)
-		checksum_add(chck_dr->name, computed);
+		checksum_add(computed, worker->src_file);
 
 	if (nb_read < 0) {
 		log_write(gettext("#%lu ! error fatal, error while reading from '%s' because %m"), worker->job, worker->src_file);
 		close(fd_in);
 		close(fd_out);
-		return false;
+		goto copy_finished;
 	}
 
 	log_write(gettext("#%lu > flush file '%s'"), worker->job, worker->dest_file);
@@ -194,21 +238,21 @@ static bool worker_process_copy(struct worker * worker) {
 		log_write(gettext("#%lu ! error while fsyncing from '%s' because %m"), worker->job, worker->dest_file);
 		close(fd_in);
 		close(fd_out);
-		return false;
+		goto copy_finished;
 	}
 
 	close(fd_in);
 
 	if (differ_checksum) {
 		close(fd_out);
-		return true;
+		goto copy_finished;
 	}
 
 	off_t begin = lseek(fd_out, 0, SEEK_SET);
 	if (begin == (off_t) -1) {
 		log_write(gettext("#%lu ! error while repositioning file '%s' at it beginning"), worker->job, worker->dest_file);
 		close(fd_out);
-		return false;
+		goto copy_finished;
 	}
 
 	chck = chck_dr->new_checksum();
@@ -237,16 +281,19 @@ static bool worker_process_copy(struct worker * worker) {
 
 		free(computed);
 		free(recomputed);
-
-		return true;
 	} else {
 		log_write(gettext("#%lu ≠ digests mismatch between '%s'[%s] and '%s'[%s]"), worker->job, worker->src_file, computed, worker->dest_file, recomputed);
 
 		free(computed);
 		free(recomputed);
-
-		return false;
 	}
+
+copy_finished:
+	worker->status = worker_status_finished;
+
+	pthread_mutex_lock(&worker_lock);
+	pthread_mutex_unlock(&worker_lock);
+	sem_post(&worker_jobs);
 }
 
 static void worker_process_do(void * arg __attribute__((unused))) {
@@ -270,6 +317,58 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 	while (nb_cpus != free_job) {
 		sleep(1);
 		sem_getvalue(&worker_jobs, &free_job);
+	}
+
+	if (checksum_has_checksum_file()) {
+		checksum_rewind();
+
+		char * digest = NULL, * filename = NULL;
+		while (checksum_parse(&digest, &filename)) {
+			unsigned long i_job = ++worker_n_jobs;
+
+			sem_wait(&worker_jobs);
+			pthread_mutex_lock(&worker_lock);
+
+			struct worker * worker = NULL;
+			unsigned int i;
+			for (i = 0; i < worker_nb_workers && worker == NULL; i++)
+				if (workers[i].status == worker_status_init)
+					worker = workers + i;
+
+			for (i = 0; i < worker_nb_workers && worker == NULL; i++)
+				if (workers[i].status == worker_status_finished) {
+					worker = workers + i;
+
+					free(worker->src_file);
+					free(worker->dest_file);
+					free(worker->digest);
+					worker->src_file = worker->dest_file = worker->digest = NULL;
+				}
+
+			worker->job = i_job;
+			worker->status = worker_status_running;
+			worker->src_file = filename;
+			worker->dest_file = NULL;
+			worker->digest = digest;
+			worker->pct = 0;
+
+			pthread_mutex_unlock(&worker_lock);
+
+			char * name;
+			asprintf(&name, "worker #%lu", i_job);
+			int error = thread_pool_run(name, worker_process_checksum, worker);
+
+			if (error != 0)
+				log_write(gettext("#%lu ! error, failed to create new thread"), i_job);
+
+			free(name);
+		}
+
+		free_job = 0;
+		while (nb_cpus != free_job) {
+			sleep(1);
+			sem_getvalue(&worker_jobs, &free_job);
+		}
 	}
 
 	worker_running = false;
@@ -408,13 +507,14 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 		worker->status = worker_status_running;
 		worker->src_file = strdup(full_path);
 		worker->dest_file = strdup(output);
+		worker->digest = NULL;
 		worker->pct = 0;
 
 		pthread_mutex_unlock(&worker_lock);
 
 		char * name;
 		asprintf(&name, "worker #%lu", i_job);
-		error = thread_pool_run(name, worker_process_child, worker);
+		error = thread_pool_run(name, worker_process_copy, worker);
 
 		if (error != 0)
 			log_write(gettext("#%lu ! error, failed to create new thread"), i_job);

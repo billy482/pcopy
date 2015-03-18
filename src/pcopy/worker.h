@@ -40,10 +40,9 @@ struct worker {
 
 	char * src_file;
 	char * dest_file;
+	char * digest;
 
 	volatile float pct;
-
-	bool has_checksum_file;
 
 	volatile enum {
 		worker_status_init,

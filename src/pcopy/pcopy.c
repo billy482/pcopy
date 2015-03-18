@@ -150,12 +150,15 @@ int main(int argc, char * argv[]) {
 		OPT_CHECKSUM = 'c',
 		OPT_HELP     = 'h',
 		OPT_PAUSE    = 'p',
+
+		OPT_CHECKSUM_FILE = 128,
 	};
 
 	static struct option op[] = {
-		{ "checksum", 1, 0, OPT_CHECKSUM },
-		{ "help",     0, 0, OPT_HELP },
-		{ "pause",    0, 0, OPT_PAUSE },
+		{ "checksum",      1, 0, OPT_CHECKSUM },
+		{ "checksum-file", 1, 0, OPT_CHECKSUM_FILE },
+		{ "help",          0, 0, OPT_HELP },
+		{ "pause",         0, 0, OPT_PAUSE },
 
 		{ NULL, 0, 0, 0 },
 	};
@@ -189,6 +192,10 @@ int main(int argc, char * argv[]) {
 					printf("Error: hash function '%s' not found\n", optarg);
 					return 1;
 				}
+				break;
+
+			case OPT_CHECKSUM_FILE:
+				checksum_create(optarg);
 				break;
 
 			case OPT_HELP:
@@ -256,9 +263,11 @@ static void quit(int signal __attribute__((unused))) {
 
 static void show_help() {
 	printf("pCopy (" PCOPY_VERSION ")\n");
-	printf(gettext("  -c, --checksum <hash> : Use <hash> as hash function,\n"));
-	printf(gettext("                          Use 'help' to show available hash functions\n"));
-	printf(gettext("  -h, --help            : Show this and exit\n"));
-	printf(gettext("  -p, --pause           : Pause at the end of copy\n\n"));
+	printf(gettext("Usage: pcopy [options] <src-files>... <dest-file>\n"));
+	printf(gettext("  -c, --checksum <hash>      : Use <hash> as hash function,\n"));
+	printf(gettext("                               Use 'help' to show available hash functions\n"));
+	printf(gettext("      --checksum-file <file> : Defer checksum computation after copy and write checksum into <file>\n"));
+	printf(gettext("  -h, --help                 : Show this and exit\n"));
+	printf(gettext("  -p, --pause                : Pause at the end of copy\n\n"));
 }
 
