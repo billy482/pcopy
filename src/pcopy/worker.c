@@ -147,7 +147,6 @@ static void worker_process_checksum(void * arg) {
 	close(fd_in);
 
 	char * computed = chck->ops->digest(chck);
-	log_write(gettext("#%lu # compute %s of '%s'"), worker->job, chck_dr->name, computed);
 	chck->ops->free(chck);
 
 	if (strcmp(computed, worker->digest) == 0)
@@ -220,7 +219,7 @@ static void worker_process_copy(void * arg) {
 	}
 
 	char * computed = chck->ops->digest(chck);
-	log_write(gettext("#%lu # compute %s of '%s'"), worker->job, chck_dr->name, computed);
+	log_write(gettext("#%lu # %s's sum of '%s' is %s"), worker->job, chck_dr->name, worker->src_file, computed);
 	chck->ops->free(chck);
 
 	if (differ_checksum)
