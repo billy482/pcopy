@@ -64,6 +64,7 @@ static unsigned int worker_nb_inputs = 0;
 static const char * worker_output = NULL;
 static size_t worker_output_length = 0;
 
+static bool worker_running = false;
 static sem_t worker_jobs;
 static unsigned long worker_n_jobs = 0;
 
@@ -77,6 +78,10 @@ static bool worker_process_copy(struct worker * worker);
 static void worker_process_do(void * arg);
 static int worker_process_do2(const char * partial_path, const char * full_path);
 
+
+bool worker_finished() {
+	return !worker_running;
+}
 
 struct worker * worker_get(unsigned int * nb_working_workers, unsigned int * nb_total_workers) {
 	pthread_mutex_lock(&worker_lock);
@@ -219,6 +224,9 @@ static bool worker_process_copy(struct worker * worker) {
 		worker->pct = 0.5 + done / info.st_size;
 	}
 
+	if (nb_read < 0)
+		log_write(gettext("#%lu ! warning, error while reading from '%s' because %m"), worker->job, worker->dest_file);
+
 	close(fd_out);
 
 	char * recomputed = chck->ops->digest(chck);
@@ -242,8 +250,10 @@ static bool worker_process_copy(struct worker * worker) {
 }
 
 static void worker_process_do(void * arg __attribute__((unused))) {
-	unsigned int nb_cpus = util_nb_cpus();
+	int nb_cpus = util_nb_cpus();
 	sem_init(&worker_jobs, 0, nb_cpus);
+
+	worker_running = true;
 
 	workers = calloc(nb_cpus, sizeof(struct worker));
 	worker_nb_workers = nb_cpus;
@@ -255,6 +265,14 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 		char * src_input = strrchr(inputs, '/');
 		failed = worker_process_do2(src_input, inputs);
 	}
+
+	int free_job = 0;
+	while (nb_cpus != free_job) {
+		sleep(1);
+		sem_getvalue(&worker_jobs, &free_job);
+	}
+
+	worker_running = false;
 }
 
 static int worker_process_do2(const char * partial_path, const char * full_path) {

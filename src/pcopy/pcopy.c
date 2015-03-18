@@ -209,10 +209,13 @@ int main(int argc, char * argv[]) {
 	mvprintw(row - 1, 1, "pCopy");
 	refresh();
 
-	for (;;) {
+	while (!worker_finished()) {
 		sleep(2);
 		display();
 	}
+
+	display();
+	sleep(2);
 
 	endwin();
 
