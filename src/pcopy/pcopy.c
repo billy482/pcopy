@@ -46,6 +46,8 @@
 #include <stdlib.h>
 // memset, strdup, strlen
 #include <string.h>
+// localtime_r, strftime, time
+#include <time.h>
 // exit
 #include <unistd.h>
 
@@ -124,7 +126,17 @@ static void display() {
 	worker_release();
 
 	mvprintw(row - 1, 0, line);
-	mvprintw(row - 1, 1, "pCopy %ux%u", row, col);
+	mvprintw(row - 1, 1, "pCopy " PCOPY_VERSION);
+
+	time_t now = time(NULL);
+
+	struct tm lnow;
+	localtime_r(&now, &lnow);
+
+	char buf[16];
+	ssize_t nb_write = strftime(buf, 16, "%X", &lnow);
+
+	mvprintw(row - 1, col - nb_write - 1, "%s", buf);
 
 	refresh();
 }
@@ -137,18 +149,22 @@ int main(int argc, char * argv[]) {
 	enum {
 		OPT_CHECKSUM = 'c',
 		OPT_HELP     = 'h',
+		OPT_PAUSE    = 'p',
 	};
 
 	static struct option op[] = {
 		{ "checksum", 1, 0, OPT_CHECKSUM },
 		{ "help",     0, 0, OPT_HELP },
+		{ "pause",    0, 0, OPT_PAUSE },
 
 		{ NULL, 0, 0, 0 },
 	};
 
+	bool pause = false;
+
 	static int lo;
 	for (;;) {
-		int c = getopt_long(argc, argv, "c:h?", op, &lo);
+		int c = getopt_long(argc, argv, "c:h?p", op, &lo);
 		if (c == -1)
 			break;
 
@@ -178,6 +194,10 @@ int main(int argc, char * argv[]) {
 			case OPT_HELP:
 				show_help();
 				return 0;
+
+			case OPT_PAUSE:
+				pause = true;
+				break;
 		}
 	}
 
@@ -206,7 +226,7 @@ int main(int argc, char * argv[]) {
 
 	signal(SIGINT, quit);
 
-	mvprintw(row - 1, 1, "pCopy");
+	mvprintw(row - 1, 1, "pCopy " PCOPY_VERSION);
 	refresh();
 
 	while (!worker_finished()) {
@@ -215,7 +235,11 @@ int main(int argc, char * argv[]) {
 	}
 
 	display();
-	sleep(2);
+
+	if (pause)
+		getch();
+	else
+		sleep(5);
 
 	endwin();
 
@@ -234,6 +258,7 @@ static void show_help() {
 	printf("pCopy (" PCOPY_VERSION ")\n");
 	printf(gettext("  -c, --checksum <hash> : Use <hash> as hash function,\n"));
 	printf(gettext("                          Use 'help' to show available hash functions\n"));
-	printf(gettext("  -h, --help            : Show this and exit\n\n"));
+	printf(gettext("  -h, --help            : Show this and exit\n"));
+	printf(gettext("  -p, --pause           : Pause at the end of copy\n\n"));
 }
 
