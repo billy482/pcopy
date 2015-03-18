@@ -147,11 +147,11 @@ int main(int argc, char * argv[]) {
 	textdomain("pcopy");
 
 	enum {
-		OPT_CHECKSUM = 'c',
-		OPT_HELP     = 'h',
-		OPT_PAUSE    = 'p',
-
-		OPT_CHECKSUM_FILE = 128,
+		OPT_CHECKSUM      = 'c',
+		OPT_CHECKSUM_FILE = 'C',
+		OPT_HELP          = 'h',
+		OPT_LOG_FILE      = 'l',
+		OPT_PAUSE         = 'p',
 	};
 
 	static struct option op[] = {
@@ -167,7 +167,7 @@ int main(int argc, char * argv[]) {
 
 	static int lo;
 	for (;;) {
-		int c = getopt_long(argc, argv, "c:h?p", op, &lo);
+		int c = getopt_long(argc, argv, "c:C:h?l:p", op, &lo);
 		if (c == -1)
 			break;
 
@@ -201,6 +201,10 @@ int main(int argc, char * argv[]) {
 			case OPT_HELP:
 				show_help();
 				return 0;
+
+			case OPT_LOG_FILE:
+				log_open_log_file(optarg);
+				break;
 
 			case OPT_PAUSE:
 				pause = true;
@@ -268,6 +272,7 @@ static void show_help() {
 	printf(gettext("                               Use 'help' to show available hash functions\n"));
 	printf(gettext("      --checksum-file <file> : Defer checksum computation after copy and write checksum into <file>\n"));
 	printf(gettext("  -h, --help                 : Show this and exit\n"));
+	printf(gettext("  -l, --log-file <file>      : Log also into <file>\n"));
 	printf(gettext("  -p, --pause                : Pause at the end of copy\n\n"));
 }
 
