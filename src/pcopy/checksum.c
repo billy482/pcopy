@@ -47,17 +47,18 @@
 
 static int checksum_fd = -1;
 
-static struct checksum * (*checksum_default_driver)(void) = checksum_md5_new_checksum;
-
 static struct checksum_driver checksum_drivers[] = {
 	{ "md5", checksum_md5_new_checksum },
 
 	{ NULL, NULL },
 };
 
+static struct checksum_driver * checksum_default_driver = checksum_drivers;
+
 
 void checksum_add(const char * digest, const char * path) {
-	dprintf(checksum_fd, "%s  %s\n", digest, path);
+	if (checksum_fd >= 0)
+		dprintf(checksum_fd, "%s  %s\n", digest, path);
 }
 
 void checksum_create(const char * filename) {
@@ -68,8 +69,12 @@ struct checksum_driver * checksum_digests() {
 	return checksum_drivers;
 }
 
-struct checksum * checksum_get_checksum() {
-	return checksum_default_driver();
+struct checksum_driver * checksum_get_default() {
+	return checksum_default_driver;
+}
+
+bool checksum_has_checksum_file() {
+	return checksum_fd > -1;
 }
 
 bool checksum_parse(char ** digest, char ** path) {
@@ -124,7 +129,7 @@ bool checksum_set_default(const char * checksum) {
 	struct checksum_driver * driver = checksum_drivers;
 	for (; driver->name != NULL; driver++)
 		if (strcmp(checksum, driver->name) == 0) {
-			checksum_default_driver = driver->new_checksum;
+			checksum_default_driver = driver;
 			return true;
 		}
 

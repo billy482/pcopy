@@ -44,15 +44,16 @@
 #include <stdio.h>
 // calloc, free
 #include <stdlib.h>
-// strdup, strlen, strrchr
+// strcmp, strdup, strlen, strrchr
 #include <string.h>
 // fstat, chmod, lstat, mkdir, mkfifo, mknod, open
 #include <sys/stat.h>
-// fstat, lstat, mkdir, mkfifo, mknod, open
+// fstat, lseek, lstat, mkdir, mkfifo, mknod, open
 #include <sys/types.h>
-// access, chown, fchown, fstat, lstat, mknod, readlink, symlink
+// access, chown, fchown, fstat, lseek, lstat, mknod, readlink, symlink
 #include <unistd.h>
 
+#include "checksum.h"
 #include "log.h"
 #include "thread.h"
 #include "util.h"
@@ -123,6 +124,9 @@ static void worker_process_child(void * arg) {
 static bool worker_process_copy(struct worker * worker, char ** digest) {
 	log_write(gettext("#%lu @ copy regular file from '%s' to '%s'"), worker->job, worker->src_file, worker->dest_file);
 
+	struct checksum_driver * chck_dr = checksum_get_default();
+	bool differ_checksum = checksum_has_checksum_file();
+
 	int fd_in = open(worker->src_file, O_RDONLY);
 	if (fd_in < 0) {
 		log_write(gettext("#%lu ! error fatal, failed to open '%s' for reading because %m"), worker->job, worker->src_file);
@@ -146,6 +150,8 @@ static bool worker_process_copy(struct worker * worker, char ** digest) {
 	if (fchown(fd_out, info.st_uid, info.st_gid) != 0)
 		log_write(gettext("#%lu ! warning, failed to change owner and group of '%s' because %m"), worker->job, worker->dest_file);
 
+	struct checksum * chck = chck_dr->new_checksum();
+
 	char buffer[16384];
 	ssize_t nb_read, nb_total_read = 0;
 	while (nb_read = read(fd_in, buffer, 16384), nb_read > 0) {
@@ -160,10 +166,21 @@ static bool worker_process_copy(struct worker * worker, char ** digest) {
 		nb_total_read += nb_read;
 
 		float done = nb_total_read;
+		if (!differ_checksum)
+			done /= 2;
 		worker->pct = done / info.st_size;
 
-		usleep(100);
+		chck->ops->update(chck, buffer, nb_read);
 	}
+
+	char * computed = chck->ops->digest(chck);
+	log_write(gettext("#%lu # compute %s of '%s'"), worker->job, chck_dr->name, computed);
+	chck->ops->free(chck);
+
+	if (differ_checksum)
+		checksum_add(chck_dr->name, computed);
+	else if (digest != NULL)
+		*digest = computed;
 
 	if (nb_read < 0) {
 		log_write(gettext("#%lu ! error fatal, error while reading from '%s' because %m"), worker->job, worker->src_file);
@@ -180,9 +197,52 @@ static bool worker_process_copy(struct worker * worker, char ** digest) {
 	}
 
 	close(fd_in);
+
+	if (differ_checksum) {
+		close(fd_out);
+		return true;
+	}
+
+	off_t begin = lseek(fd_out, 0, SEEK_SET);
+	if (begin == (off_t) -1) {
+		log_write(gettext("#%lu ! error while repositioning file '%s' at it beginning"), worker->job, worker->dest_file);
+		close(fd_out);
+		return false;
+	}
+
+	chck = chck_dr->new_checksum();
+	nb_total_read = 0;
+
+	while (nb_read = read(fd_out, buffer, 16384), nb_read > 0) {
+		chck->ops->update(chck, buffer, nb_read);
+
+		nb_total_read += nb_read;
+
+		float done = nb_total_read;
+		done /= 2;
+		worker->pct = 0.5 + done / info.st_size;
+	}
+
 	close(fd_out);
 
-	return true;
+	char * recomputed = chck->ops->digest(chck);
+	chck->ops->free(chck);
+
+	if (strcmp(computed, recomputed) == 0) {
+		log_write(gettext("#%lu = digests match (digest: %s) '%s'"), worker->job, computed, worker->src_file);
+
+		free(computed);
+		free(recomputed);
+
+		return true;
+	} else {
+		log_write(gettext("#%lu ≠ digests mismatch between '%s'[%s] and '%s'[%s]"), worker->job, worker->src_file, computed, worker->dest_file, recomputed);
+
+		free(computed);
+		free(recomputed);
+
+		return false;
+	}
 }
 
 static void worker_process_do(void * arg __attribute__((unused))) {

@@ -55,7 +55,8 @@ struct checksum_driver {
 void checksum_add(const char * digest, const char * path);
 void checksum_create(const char * filename);
 struct checksum_driver * checksum_digests(void);
-struct checksum * checksum_get_checksum(void);
+struct checksum_driver * checksum_get_default(void);
+bool checksum_has_checksum_file(void);
 bool checksum_parse(char ** digest, char ** path);
 void checksum_rewind(void);
 bool checksum_set_default(const char * checksum);
