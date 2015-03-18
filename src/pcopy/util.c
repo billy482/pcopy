@@ -77,7 +77,7 @@ unsigned int util_nb_cpus() {
 	unsigned int first, last;
 	int nb_parsed = sscanf(buffer, "%u-%u", &first, &last);
 
-	return nb_parsed == 2 ? last - first : 1;
+	return nb_parsed == 2 ? last - first + 1 : 1;
 }
 
 size_t util_string_length(const char * string) {

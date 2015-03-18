@@ -158,8 +158,8 @@ error:
 	worker->status = worker_status_finished;
 
 	pthread_mutex_lock(&worker_lock);
-	sem_post(&worker_jobs);
 	pthread_mutex_unlock(&worker_lock);
+	sem_post(&worker_jobs);
 }
 
 static void worker_process_do(void * arg __attribute__((unused))) {
@@ -290,8 +290,9 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 		}
 	} else if (S_ISREG(info.st_mode)) {
 		sem_wait(&worker_jobs);
+		pthread_mutex_lock(&worker_lock);
 
-		struct worker * worker = workers;
+		struct worker * worker = NULL;
 		unsigned int i;
 		for (i = 0; i < worker_nb_workers && worker == NULL; i++)
 			if (workers[i].status == worker_status_init)
@@ -306,6 +307,8 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 		worker->src_file = strdup(full_path);
 		worker->dest_file = strdup(output);
 		worker->pct = 0;
+
+		pthread_mutex_unlock(&worker_lock);
 
 		char * name;
 		asprintf(&name, "worker #%lu", i_job);
