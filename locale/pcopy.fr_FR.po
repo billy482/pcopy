@@ -6,7 +6,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Report-Msgid-Bugs-To: \n"
-        "POT-Creation-Date: 2015-03-19 14:29+0100\n"
+        "POT-Creation-Date: 2015-03-19 15:51+0100\n"
         "PO-Revision-Date: 2014-11-13 09:03+0100\n"
         "Last-Translator: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
         "Language-Team: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
@@ -16,53 +16,53 @@ msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Content-Transfer-Encoding: 8bit\n"
         "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/pcopy/pcopy.c:181
+#: src/pcopy/pcopy.c:187
 #, c-format
 msgid   "Available cryptographic hash functions: "
 msgstr  "Fonctions de hachage cryptographique : "
 
-#: src/pcopy/pcopy.c:216
+#: src/pcopy/pcopy.c:222
 #, c-format
 msgid   "pCopy: parallel copying and checksumming\n"
 msgstr  "pCopy : copie et calcul d’empreinte en parralèle\n"
 
-#: src/pcopy/pcopy.c:217
+#: src/pcopy/pcopy.c:223
 #, c-format
 msgid   "version: %s, build: %s %s\n"
 msgstr  "version : %s, compilé : %s %s \n"
 
-#: src/pcopy/pcopy.c:279
+#: src/pcopy/pcopy.c:285
 #, c-format
 msgid   "Usage: pcopy [options] <src-files>... <dest-file>\n"
 msgstr  "Utilisation : pcopy [options] <src-files>... <dest-file>\n"
 
-#: src/pcopy/pcopy.c:280
+#: src/pcopy/pcopy.c:286
 #, c-format
 msgid   "  -c, --checksum <hash>      : Use <hash> as hash function,\n"
 msgstr  "  -c, --checksum <hash>         : Utilise <hash> comme fonction de hachage,\n"
 
-#: src/pcopy/pcopy.c:281
+#: src/pcopy/pcopy.c:287
 #, c-format
 msgid   "                               Use 'help' to show available hash functions\n"
 msgstr  "                                  Utilise « help » pour afficher les fonctions de hachage disponibles\n"
 
-#: src/pcopy/pcopy.c:282
+#: src/pcopy/pcopy.c:288
 #, c-format
 msgid   "  -C, --checksum-file <file> : Defer checksum checking after copy and write checksum into <file>\n"
 msgstr  "  -C, --checksum-file <fichier> : Différe la vérification de l’empreinte cryptographique après la copie et écrit "
         "l’empreinte dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:283
+#: src/pcopy/pcopy.c:289
 #, c-format
 msgid   "  -h, --help                 : Show this and exit\n"
 msgstr  "  -h, --help                    : Affiche ceci et quite\n"
 
-#: src/pcopy/pcopy.c:284
+#: src/pcopy/pcopy.c:290
 #, c-format
 msgid   "  -l, --log-file <file>      : Log also into <file>\n"
 msgstr  "  -l, --log-file <fichier>      : Enregistre aussi dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:285
+#: src/pcopy/pcopy.c:291
 #, c-format
 msgid   "  -p, --pause                : Pause at the end of copy\n"
         "\n"

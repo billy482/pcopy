@@ -110,18 +110,24 @@ static void display() {
 
 		mvprintw(i + offset, 0, line);
 
-		char buffer[col + 1];
-		memset(buffer, ' ', col);
-		buffer[col] = '\0';
-		ssize_t nb_write = snprintf(buffer, col - 1, "#%lu [%3.0f%%] : %s", worker->job, 100 * worker->pct, worker->description);
+		size_t buffer_length = 4 * col;
+		char * buffer = malloc(buffer_length + 1);
+		memset(buffer, ' ', buffer_length);
+		buffer[buffer_length] = '\0';
+
+		ssize_t nb_write = snprintf(buffer, buffer_length, "#%lu [%3.0f%%] : %s", worker->job, 100 * worker->pct, worker->description);
 		buffer[nb_write] = ' ';
+		buffer[util_string_length2(buffer, col)] = '\0';
 
 		int width = col * worker->pct;
+		int wwidth = util_string_length2(buffer, width);
 
 		attron(COLOR_PAIR(2));
-		mvprintw(i + offset, 0, "%*s", width, buffer);
+		mvprintw(i + offset, 0, "%*s", wwidth, buffer);
 		attroff(COLOR_PAIR(2));
-		mvprintw(i + offset, width, "%s", buffer + util_string_length2(buffer, width));
+		mvprintw(i + offset, width, "%s", buffer + wwidth);
+
+		free(buffer);
 	}
 	worker_release();
 
