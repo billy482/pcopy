@@ -48,7 +48,8 @@
 static int checksum_fd = -1;
 
 static struct checksum_driver checksum_drivers[] = {
-	{ "md5", checksum_md5_new_checksum },
+	{ "md5",  checksum_md5_new_checksum },
+	{ "sha1", checksum_sha1_new_checksum },
 
 	{ NULL, NULL },
 };

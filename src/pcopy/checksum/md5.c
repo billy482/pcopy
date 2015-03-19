@@ -31,7 +31,7 @@
 
 // free, malloc
 #include <stdlib.h>
-// 
+// md5_digest, md5_init, md5_update
 #include <nettle/md5.h>
 // strdup
 #include <string.h>

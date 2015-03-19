@@ -29,15 +29,83 @@
 *  Copyright (C) 2015, Guillaume Clercin <clercin.guillaume@gmail.com>       *
 \****************************************************************************/
 
-#ifndef __PCOPY_CHECKSUM_DIGEST_H__
-#define __PCOPY_CHECKSUM_DIGEST_H__
+// free, malloc
+#include <stdlib.h>
+// sha1_digest, sha1_init, sha1_update
+#include <nettle/sha1.h>
+// strdup
+#include <string.h>
 
-#include "../checksum.h"
+#include "digest.h"
 
-struct checksum * checksum_md5_new_checksum(void);
-struct checksum * checksum_sha1_new_checksum(void);
+struct checksum_sha1 {
+	struct sha1_ctx sha1;
+	char digest[SHA1_DIGEST_SIZE * 2 + 1];
+};
 
-void digest_convert_to_hex(unsigned char * digest, ssize_t length, char * hex_digest);
+static char * checksum_sha1_digest(struct checksum * checksum);
+static void checksum_sha1_free(struct checksum * checksum);
+static ssize_t checksum_sha1_update(struct checksum * checksum, const void * data, ssize_t length);
 
-#endif
+static struct checksum_ops checksum_sha1_ops = {
+	.digest = checksum_sha1_digest,
+	.free   = checksum_sha1_free,
+	.update = checksum_sha1_update,
+};
+
+
+static char * checksum_sha1_digest(struct checksum * checksum) {
+	if (checksum == NULL)
+		return NULL;
+
+	struct checksum_sha1 * self = checksum->data;
+	if (self->digest[0] != '\0')
+		return strdup(self->digest);
+
+	struct sha1_ctx sha1 = self->sha1;
+	unsigned char digest[SHA1_DIGEST_SIZE];
+	sha1_digest(&sha1, SHA1_DIGEST_SIZE, digest);
+
+	digest_convert_to_hex(digest, SHA1_DIGEST_SIZE, self->digest);
+
+	return strdup(self->digest);
+}
+
+static void checksum_sha1_free(struct checksum * checksum) {
+	if (checksum == NULL)
+		return;
+
+	struct checksum_sha1 * self = checksum->data;
+
+	unsigned char digest[SHA1_DIGEST_SIZE];
+	sha1_digest(&self->sha1, SHA1_DIGEST_SIZE, digest);
+
+	free(self);
+
+	checksum->data = NULL;
+	checksum->ops = NULL;
+
+	free(checksum);
+}
+
+struct checksum * checksum_sha1_new_checksum() {
+	struct checksum * checksum = malloc(sizeof(struct checksum));
+	checksum->ops = &checksum_sha1_ops;
+
+	struct checksum_sha1 * self = malloc(sizeof(struct checksum_sha1));
+	sha1_init(&self->sha1);
+	*self->digest = '\0';
+
+	checksum->data = self;
+	return checksum;
+}
+
+static ssize_t checksum_sha1_update(struct checksum * checksum, const void * data, ssize_t length) {
+	if (checksum == NULL || data == NULL || length < 1)
+		return -1;
+
+	struct checksum_sha1 * self = checksum->data;
+	sha1_update(&self->sha1, length, data);
+	return length;
+}
 
