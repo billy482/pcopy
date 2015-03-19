@@ -42,6 +42,7 @@ unsigned int util_nb_cpus(void);
 size_t util_string_length(const char * string);
 size_t util_string_length2(const char * string, size_t length);
 void util_string_middle_elipsis(char * string, size_t length);
+void util_string_middle_elipsis2(char * string, size_t length);
 
 #endif
 

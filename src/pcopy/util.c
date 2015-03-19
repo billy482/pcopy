@@ -153,6 +153,45 @@ void util_string_middle_elipsis(char * string, size_t length) {
 	memmove(ptrA + 1, ptrB, strlen(ptrB) + 1);
 }
 
+void util_string_middle_elipsis2(char * string, size_t length) {
+	size_t str_length = strlen(string);
+	if (str_length <= length)
+		return;
+
+	length--;
+
+	size_t used = 0;
+	char * ptrA = string;
+	char * ptrB = string + str_length;
+	while (used < length) {
+		int char_length = util_string_valid_utf8_char(ptrA);
+		if (char_length == 0)
+			return;
+
+		if (used + char_length > length)
+			break;
+
+		used++;
+		ptrA += char_length;
+
+		int offset = 1;
+		while (char_length = util_string_valid_utf8_char(ptrB - offset), ptrA < ptrB - offset && char_length == 0)
+			offset++;
+
+		if (char_length == 0)
+			return;
+
+		if (used + char_length > length)
+			break;
+
+		used++;
+		ptrB -= char_length;
+	}
+
+	*ptrA = '~';
+	memmove(ptrA + 1, ptrB, strlen(ptrB) + 1);
+}
+
 static int util_string_valid_utf8_char(const char * string) {
 	const unsigned char * ptr = (const unsigned char *) string;
 	if ((*ptr & 0x7F) == *ptr)
