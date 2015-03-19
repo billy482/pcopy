@@ -97,6 +97,23 @@ size_t util_string_length(const char * string) {
 	return length;
 }
 
+size_t util_string_length2(const char * string, size_t nb_character) {
+	if (string == NULL)
+		return 0;
+
+	size_t i, l;
+	for (i = 0, l = 0; i < nb_character; i++) {
+		int char_length = util_string_valid_utf8_char(string);
+		if (char_length == 0)
+			break;
+
+		l += char_length;
+		string += char_length;
+	}
+
+	return l;
+}
+
 void util_string_middle_elipsis(char * string, size_t length) {
 	size_t str_length = strlen(string);
 	if (str_length <= length)

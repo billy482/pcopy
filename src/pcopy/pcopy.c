@@ -113,7 +113,7 @@ static void display() {
 		char buffer[col + 1];
 		memset(buffer, ' ', col);
 		buffer[col] = '\0';
-		ssize_t nb_write = snprintf(buffer, col - 1, "#%lu %.0f%% : %s", worker->job, 100 * worker->pct, worker->description);
+		ssize_t nb_write = snprintf(buffer, col - 1, "#%lu [%3.0f%%] : %s", worker->job, 100 * worker->pct, worker->description);
 		buffer[nb_write] = ' ';
 
 		int width = col * worker->pct;
@@ -121,7 +121,7 @@ static void display() {
 		attron(COLOR_PAIR(2));
 		mvprintw(i + offset, 0, "%*s", width, buffer);
 		attroff(COLOR_PAIR(2));
-		mvprintw(i + offset, width, "%s", buffer + width);
+		mvprintw(i + offset, width, "%s", buffer + util_string_length2(buffer, width));
 	}
 	worker_release();
 
@@ -247,8 +247,10 @@ int main(int argc, char * argv[]) {
 	mvprintw(row - 1, 1, "pCopy " PCOPY_VERSION);
 	refresh();
 
+	sleep(1);
+
 	while (!worker_finished()) {
-		sleep(2);
+		sleep(1);
 		display();
 	}
 
