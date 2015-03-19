@@ -1,0 +1,12 @@
+Source: pcopy
+Section: utils
+Priority: optional
+Maintainer: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>
+Build-Depends: debhelper (>= 9), dpkg-dev (>= 1.16.1~), git, cscope, exuberant-ctags
+Standards-Version: 3.9.6
+
+Package: pcopy
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Parallel copying and checksumming
+ pCopy copy recursively files and compare checksum.

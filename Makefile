@@ -178,7 +178,7 @@ DEP_DIRS	:= $(patsubst ${BUILD_DIR}/%,${DEPEND_DIR}/%,${OBJ_DIRS})
 
 # phony target
 .DEFAULT_GOAL	:= all
-.PHONY: all binaries clean clean-depend cscope ctags debug distclean lib locales package prepare realclean stat stat-extra TAGS tar test
+.PHONY: all binaries clean clean-depend cscope ctags debug distclean install lib locales package prepare realclean stat stat-extra TAGS tar test
 
 all: binaries locales
 
@@ -212,6 +212,13 @@ distclean realclean: clean
 doc: Doxyfile ${LIBOBJECT_SRC_FILES} ${HEAD_FILES}
 	@echo ' DOXYGEN'
 	@${DOXYGEN}
+
+install: all
+	@echo ' MKDIR ${DESTDIR}'
+	@mkdir -p ${DESTDIR}/usr/bin ${DESTDIR}/usr/share/locale
+	@echo ' CP'
+	@cp bin/pcopy ${DESTDIR}/usr/bin
+	@./script/copy-locales.pl ${DESTDIR}/usr/share/locale locale/*.mo
 
 locales: $(sort ${LOCALE_MO})
 
