@@ -111,7 +111,7 @@ void log_write(const char * format, ...) {
 	pthread_mutex_lock(&log_lock);
 
 	if (log_fd > -1)
-		dprintf(log_fd, "%s %s\n", buffer, message);
+		dprintf(log_fd, "[%s] %s\n", buffer, message);
 
 	struct log * log;
 	if (log_nb_messages == log_nb_reserved_messages) {
@@ -122,7 +122,7 @@ void log_write(const char * format, ...) {
 		log_nb_messages++;
 	}
 
-	asprintf(&log->message, "%s %s", buffer, message);
+	asprintf(&log->message, "[%s] %s", buffer, message);
 	log->next = NULL;
 
 	if (log_first == NULL)

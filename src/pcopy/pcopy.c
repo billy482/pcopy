@@ -91,7 +91,7 @@ static void display() {
 
 		if (util_string_length(logs->message) > col) {
 			char * message = strdup(logs->message);
-			util_string_middle_elipsis(message, col);
+			util_string_middle_elipsis2(message, col);
 			mvprintw(i + offset, 0, "%s", message);
 			free(message);
 		} else
@@ -102,6 +102,10 @@ static void display() {
 	log_release();
 
 	offset = row - nb_working_workers - 1;
+
+	size_t buffer_length = 4 * col;
+	char * buffer = malloc(buffer_length + 1);
+
 	unsigned int j;
 	for (i = 0, j = 0; i < nb_working_workers; i++, j++) {
 		struct worker * worker = workers + j;
@@ -110,14 +114,18 @@ static void display() {
 
 		mvprintw(i + offset, 0, line);
 
-		size_t buffer_length = 4 * col;
-		char * buffer = malloc(buffer_length + 1);
 		memset(buffer, ' ', buffer_length);
 		buffer[buffer_length] = '\0';
 
 		ssize_t nb_write = snprintf(buffer, buffer_length, "#%lu [%3.0f%%] : %s", worker->job, 100 * worker->pct, worker->description);
-		buffer[nb_write] = ' ';
-		buffer[util_string_length2(buffer, col)] = '\0';
+
+		if (util_string_length(buffer) > col)
+			util_string_middle_elipsis2(buffer, col);
+		else {
+			buffer[nb_write] = ' ';
+			buffer[util_string_length2(buffer, col)] = '\0';
+		}
+
 
 		int width = col * worker->pct;
 		int wwidth = util_string_length2(buffer, width);
@@ -126,10 +134,12 @@ static void display() {
 		mvprintw(i + offset, 0, "%*s", wwidth, buffer);
 		attroff(COLOR_PAIR(2));
 		mvprintw(i + offset, width, "%s", buffer + wwidth);
-
-		free(buffer);
 	}
 	worker_release();
+
+	free(buffer);
+
+	attron(COLOR_PAIR(3));
 
 	mvprintw(row - 1, 0, line);
 	mvprintw(row - 1, 1, "pCopy " PCOPY_VERSION);
@@ -143,6 +153,8 @@ static void display() {
 	ssize_t nb_write = strftime(buf, 16, "%X", &lnow);
 
 	mvprintw(row - 1, col - nb_write - 1, "%s", buf);
+
+	attroff(COLOR_PAIR(3));
 
 	refresh();
 }
@@ -225,9 +237,8 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	if (optind + 2 > argc) {
+	if (optind + 2 > argc)
 		return 1;
-	}
 
 	worker_process(&argv[optind], argc - optind - 1, argv[argc - 1]);
 
@@ -243,14 +254,20 @@ int main(int argc, char * argv[]) {
 
 		init_pair(1, COLOR_WHITE, COLOR_BLUE);
 		init_pair(2, COLOR_WHITE, COLOR_RED);
-		init_pair(3, COLOR_YELLOW, COLOR_BLUE);
+		init_pair(3, COLOR_WHITE, COLOR_BLUE);
 	}
 
 	log_reserve_message(row);
 
 	signal(SIGINT, quit);
 
+	char line[col + 1];
+	memset(line, ' ', col);
+	line[col] = '\0';
+
+	attron(COLOR_PAIR(3));
 	mvprintw(row - 1, 1, "pCopy " PCOPY_VERSION);
+	attroff(COLOR_PAIR(3));
 	refresh();
 
 	sleep(1);

@@ -6,7 +6,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Report-Msgid-Bugs-To: \n"
-        "POT-Creation-Date: 2015-03-19 15:51+0100\n"
+        "POT-Creation-Date: 2015-03-19 19:15+0100\n"
         "PO-Revision-Date: 2014-11-13 09:03+0100\n"
         "Last-Translator: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
         "Language-Team: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
@@ -16,53 +16,53 @@ msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Content-Transfer-Encoding: 8bit\n"
         "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/pcopy/pcopy.c:187
+#: src/pcopy/pcopy.c:199
 #, c-format
 msgid   "Available cryptographic hash functions: "
 msgstr  "Fonctions de hachage cryptographique : "
 
-#: src/pcopy/pcopy.c:222
+#: src/pcopy/pcopy.c:234
 #, c-format
 msgid   "pCopy: parallel copying and checksumming\n"
 msgstr  "pCopy : copie et calcul d’empreinte en parralèle\n"
 
-#: src/pcopy/pcopy.c:223
+#: src/pcopy/pcopy.c:235
 #, c-format
 msgid   "version: %s, build: %s %s\n"
 msgstr  "version : %s, compilé : %s %s \n"
 
-#: src/pcopy/pcopy.c:285
+#: src/pcopy/pcopy.c:302
 #, c-format
 msgid   "Usage: pcopy [options] <src-files>... <dest-file>\n"
 msgstr  "Utilisation : pcopy [options] <src-files>... <dest-file>\n"
 
-#: src/pcopy/pcopy.c:286
+#: src/pcopy/pcopy.c:303
 #, c-format
 msgid   "  -c, --checksum <hash>      : Use <hash> as hash function,\n"
 msgstr  "  -c, --checksum <hash>         : Utilise <hash> comme fonction de hachage,\n"
 
-#: src/pcopy/pcopy.c:287
+#: src/pcopy/pcopy.c:304
 #, c-format
 msgid   "                               Use 'help' to show available hash functions\n"
 msgstr  "                                  Utilise « help » pour afficher les fonctions de hachage disponibles\n"
 
-#: src/pcopy/pcopy.c:288
+#: src/pcopy/pcopy.c:305
 #, c-format
 msgid   "  -C, --checksum-file <file> : Defer checksum checking after copy and write checksum into <file>\n"
 msgstr  "  -C, --checksum-file <fichier> : Différe la vérification de l’empreinte cryptographique après la copie et écrit "
         "l’empreinte dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:289
+#: src/pcopy/pcopy.c:306
 #, c-format
 msgid   "  -h, --help                 : Show this and exit\n"
 msgstr  "  -h, --help                    : Affiche ceci et quite\n"
 
-#: src/pcopy/pcopy.c:290
+#: src/pcopy/pcopy.c:307
 #, c-format
 msgid   "  -l, --log-file <file>      : Log also into <file>\n"
 msgstr  "  -l, --log-file <fichier>      : Enregistre aussi dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:291
+#: src/pcopy/pcopy.c:308
 #, c-format
 msgid   "  -p, --pause                : Pause at the end of copy\n"
         "\n"
@@ -78,167 +78,167 @@ msgstr  "thread_pool_run : errur, pas assez de mémoire pour démarrer un nouve
 msgid   "#%lu # recompute %s of '%s'"
 msgstr  "#%lu # recalcule du %s de « %s »"
 
-#: src/pcopy/worker.c:122 src/pcopy/worker.c:181
+#: src/pcopy/worker.c:122 src/pcopy/worker.c:179
 #, c-format
 msgid   "#%lu ! error fatal, failed to open '%s' for reading because %m"
 msgstr  "#%lu ! erreur fatale, échec lors de l’ouverture de « %s » en lecture parce que %m"
 
-#: src/pcopy/worker.c:128 src/pcopy/worker.c:187 src/pcopy/worker.c:399
+#: src/pcopy/worker.c:128 src/pcopy/worker.c:185 src/pcopy/worker.c:393
 #, c-format
 msgid   "#%lu ! error fatal, failed to get information of '%s' because %m"
 msgstr  "#%lu ! erreur fatale, échec lors de obtention des informations de « %s » parce que %m"
 
-#: src/pcopy/worker.c:149 src/pcopy/worker.c:235
+#: src/pcopy/worker.c:147 src/pcopy/worker.c:231
 #, c-format
 msgid   "#%lu ! error fatal, error while reading from '%s' because %m"
 msgstr  "#%lu ! erreur fatale, erreur en lisant depuis « %s » parce que %m"
 
-#: src/pcopy/worker.c:157 src/pcopy/worker.c:287
+#: src/pcopy/worker.c:155 src/pcopy/worker.c:281
 #, c-format
 msgid   "#%lu = digests match (digest: %s) '%s'"
 msgstr  "#%lu = empreintes correspondes (empreinte : %s) « %s »"
 
-#: src/pcopy/worker.c:159
+#: src/pcopy/worker.c:157
 #, c-format
 msgid   "#%lu ≠ digests mismatch between 'src file'[%s] and '%s'[%s]"
 msgstr  "#%lu ≠ empreintes ne correspondes pas entre « fichier src» [%s] et « %s » [%s]"
 
-#: src/pcopy/worker.c:174
+#: src/pcopy/worker.c:172
 #, c-format
 msgid   "#%lu @ copy regular file from '%s' to '%s'"
 msgstr  "#%lu @ copie le fichier ordinaire depuis « %s » vers « %s »"
 
-#: src/pcopy/worker.c:194
+#: src/pcopy/worker.c:192
 #, c-format
 msgid   "#%lu ! error fatal, failed to open '%s' for writing because %m"
 msgstr  "#%lu ! erreur fatale, échec à l’ouverture de « %s » en écriture parce que %m"
 
-#: src/pcopy/worker.c:200 src/pcopy/worker.c:415 src/pcopy/worker.c:426 src/pcopy/worker.c:438 src/pcopy/worker.c:472
-#: src/pcopy/worker.c:501
+#: src/pcopy/worker.c:198 src/pcopy/worker.c:409 src/pcopy/worker.c:420 src/pcopy/worker.c:432 src/pcopy/worker.c:466
+#: src/pcopy/worker.c:495
 #, c-format
 msgid   "#%lu ! warning, failed to change owner and group of '%s' because %m"
 msgstr  "#%lu ! attention, échec en changeant le propriétaire et le groupe de « %s » parce que %m"
 
-#: src/pcopy/worker.c:209
+#: src/pcopy/worker.c:207
 #, c-format
 msgid   "#%lu ! error fatal, error while writing to '%s' because %m"
 msgstr  "#%lu ! erreur fatale, erreur en écrivant dans « %s » parce que %m"
 
-#: src/pcopy/worker.c:228
+#: src/pcopy/worker.c:224
 #, c-format
 msgid   "#%lu # %s's sum of '%s' is %s"
 msgstr  "#%lu # l’empreinte %s de « %s » est %s"
 
-#: src/pcopy/worker.c:241
+#: src/pcopy/worker.c:237
 #, c-format
 msgid   "#%lu > flushing file '%s'"
 msgstr  "#%lu > synchronisation du fichier « %s »"
 
-#: src/pcopy/worker.c:243
+#: src/pcopy/worker.c:239
 #, c-format
 msgid   "#%lu ! error while flushing file from '%s' because %m"
 msgstr  "#%lu ! erreur lors de la synchronisation du fichier « %s »"
 
-#: src/pcopy/worker.c:258
+#: src/pcopy/worker.c:254
 #, c-format
 msgid   "#%lu ! error while repositioning file '%s' at it beginning"
 msgstr  "#%lu ! erreur en repositionnant le fichier au début « %s »"
 
-#: src/pcopy/worker.c:279
+#: src/pcopy/worker.c:273
 #, c-format
 msgid   "#%lu ! warning, error while reading from '%s' because %m"
 msgstr  "#%lu ! attention, erreur en lisant depuis « %s » parce %m"
 
-#: src/pcopy/worker.c:292
+#: src/pcopy/worker.c:286
 #, c-format
 msgid   "#%lu ≠ digests mismatch between '%s'[%s] and '%s'[%s]"
 msgstr  "#%lu ≠ empreintes ne correspondes pas entre « %s » [%s] et « %s » [%s]"
 
-#: src/pcopy/worker.c:312
+#: src/pcopy/worker.c:306
 #, c-format
 msgid   "Start pCopy %s (build: %s %s)"
 msgstr  "Démarrage de pCopy %s (compilé: %s %s)"
 
-#: src/pcopy/worker.c:366
+#: src/pcopy/worker.c:360
 #, c-format
 msgid   "recompute %s of '%s'"
 msgstr  "recalcule du %s de « %s »"
 
-#: src/pcopy/worker.c:376 src/pcopy/worker.c:539
+#: src/pcopy/worker.c:370 src/pcopy/worker.c:533
 #, c-format
 msgid   "#%lu ! error, failed to create new thread"
 msgstr  "#%lu ! erreur, échec en créant un nouveau fil d’exécution"
 
-#: src/pcopy/worker.c:388
+#: src/pcopy/worker.c:382
 msgid   "Process finished"
 msgstr  "Processus terminé"
 
-#: src/pcopy/worker.c:407
+#: src/pcopy/worker.c:401
 #, c-format
 msgid   "#%lu ~ create block device '%s', major: %d, minor: %d"
 msgstr  "#%lu ~ création d’un périphérique du type bloc « %s », majeur: %d, mineur: %d"
 
-#: src/pcopy/worker.c:411
+#: src/pcopy/worker.c:405
 #, c-format
 msgid   "#%lu ! error, failed to create block device '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la création d’un périphérique du type bloc « %s » parce que %m"
 
-#: src/pcopy/worker.c:418
+#: src/pcopy/worker.c:412
 #, c-format
 msgid   "#%lu ~ create character device '%s', major: %d, minor: %d"
 msgstr  "#%lu ~ création d’un périphérique du type charactère « %s », majeur: %d, mineur: %d"
 
-#: src/pcopy/worker.c:422
+#: src/pcopy/worker.c:416
 #, c-format
 msgid   "#%lu ! error, failed to create character device '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la création d’un périphérique du type charactère « %s » parce que %m"
 
-#: src/pcopy/worker.c:430
+#: src/pcopy/worker.c:424
 #, c-format
 msgid   "#%lu ~ create directory '%s'"
 msgstr  "#%lu ~ création du répertoire « %s »"
 
-#: src/pcopy/worker.c:434
+#: src/pcopy/worker.c:428
 #, c-format
 msgid   "#%lu ! error, failed to create directory '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la création du répertoire « %s » parce que %m"
 
-#: src/pcopy/worker.c:447
+#: src/pcopy/worker.c:441
 #, c-format
 msgid   "#%lu ! error, failed to list files from '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de l’inventaire des fichiers depuis « %s » parce que %m"
 
-#: src/pcopy/worker.c:464
+#: src/pcopy/worker.c:458
 #, c-format
 msgid   "#%lu ~ create fifo '%s'"
 msgstr  "#%lu ~ création d’un tube nommé « %s »"
 
-#: src/pcopy/worker.c:468
+#: src/pcopy/worker.c:462
 #, c-format
 msgid   "#%lu ! error, failed to create fifo '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la création du tube nommé « %s » parce que %m"
 
-#: src/pcopy/worker.c:479
+#: src/pcopy/worker.c:473
 #, c-format
 msgid   "#%lu ! error, failed to reading symbolic link of '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la lecture du lien symbolique de « %s » parce que %m"
 
-#: src/pcopy/worker.c:488
+#: src/pcopy/worker.c:482
 #, c-format
 msgid   "#%lu ~ create symbolic link '%s' => '%s'"
 msgstr  "#%lu ~ création du lien symbolique « %s » => « %s »"
 
-#: src/pcopy/worker.c:491
+#: src/pcopy/worker.c:485
 #, c-format
 msgid   "#%lu ! error, failed to create symbolic link '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la création du lien symbolique « %s » parce que %m"
 
-#: src/pcopy/worker.c:497
+#: src/pcopy/worker.c:491
 #, c-format
 msgid   "#%lu ! warning, failed to change permission of '%s' because %m"
 msgstr  "#%lu ! attention, échec en changeant les permissions de « %s » parce que %m"
 
-#: src/pcopy/worker.c:529
+#: src/pcopy/worker.c:523
 #, c-format
 msgid   "copy from '%s' to '%s'"
 msgstr  "copie depuis « %s » vers « %s »"
