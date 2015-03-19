@@ -59,6 +59,8 @@
 #include "util.h"
 #include "worker.h"
 
+#include "pcopy.version"
+
 static char ** worker_inputs = NULL;
 static unsigned int worker_nb_inputs = 0;
 static const char * worker_output = NULL;
@@ -301,7 +303,7 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 
 	worker_running = true;
 
-	log_write(gettext("Start process"));
+	log_write(gettext("Start pCopy %s (build: %s %s)"), PCOPY_VERSION, __DATE__, __TIME__);
 
 	workers = calloc(nb_cpus, sizeof(struct worker));
 	worker_nb_workers = nb_cpus;

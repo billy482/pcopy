@@ -152,6 +152,7 @@ int main(int argc, char * argv[]) {
 		OPT_HELP          = 'h',
 		OPT_LOG_FILE      = 'l',
 		OPT_PAUSE         = 'p',
+		OPT_VERSION       = 'V',
 	};
 
 	static struct option op[] = {
@@ -159,6 +160,7 @@ int main(int argc, char * argv[]) {
 		{ "checksum-file", 1, 0, OPT_CHECKSUM_FILE },
 		{ "help",          0, 0, OPT_HELP },
 		{ "pause",         0, 0, OPT_PAUSE },
+		{ "version",       0, 0, OPT_VERSION },
 
 		{ NULL, 0, 0, 0 },
 	};
@@ -167,7 +169,7 @@ int main(int argc, char * argv[]) {
 
 	static int lo;
 	for (;;) {
-		int c = getopt_long(argc, argv, "c:C:h?l:p", op, &lo);
+		int c = getopt_long(argc, argv, "c:C:h?l:pV", op, &lo);
 		if (c == -1)
 			break;
 
@@ -209,6 +211,11 @@ int main(int argc, char * argv[]) {
 			case OPT_PAUSE:
 				pause = true;
 				break;
+
+			case OPT_VERSION:
+				printf(gettext("pCopy: parallel copying and checksumming\n"));
+				printf(gettext("version: %s, build: %s %s\n"), PCOPY_VERSION, __DATE__, __TIME__);
+				return 0;
 		}
 	}
 
