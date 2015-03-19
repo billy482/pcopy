@@ -178,7 +178,7 @@ int main(int argc, char * argv[]) {
 				if (!strcmp(optarg, "help")) {
 					struct checksum_driver * drivers = checksum_digests();
 
-					printf(gettext("Available checksums: "));
+					printf(gettext("Available cryptographic hash functions: "));
 					unsigned int i;
 					for (i = 0; drivers->name != NULL; i++, drivers++) {
 						if (i > 0)
@@ -279,7 +279,7 @@ static void show_help() {
 	printf(gettext("Usage: pcopy [options] <src-files>... <dest-file>\n"));
 	printf(gettext("  -c, --checksum <hash>      : Use <hash> as hash function,\n"));
 	printf(gettext("                               Use 'help' to show available hash functions\n"));
-	printf(gettext("      --checksum-file <file> : Defer checksum computation after copy and write checksum into <file>\n"));
+	printf(gettext("  -C, --checksum-file <file> : Defer checksum checking after copy and write checksum into <file>\n"));
 	printf(gettext("  -h, --help                 : Show this and exit\n"));
 	printf(gettext("  -l, --log-file <file>      : Log also into <file>\n"));
 	printf(gettext("  -p, --pause                : Pause at the end of copy\n\n"));

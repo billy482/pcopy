@@ -204,7 +204,7 @@ static void worker_process_copy(void * arg) {
 	while (nb_read = read(fd_in, buffer, 16384), nb_read > 0) {
 		ssize_t nb_write = write(fd_out, buffer, nb_read);
 		if (nb_write < 0) {
-			log_write(gettext("#%lu ! error fatal, error while writing from '%s' because %m"), worker->job, worker->dest_file);
+			log_write(gettext("#%lu ! error fatal, error while writing to '%s' because %m"), worker->job, worker->dest_file);
 			close(fd_in);
 			close(fd_out);
 			goto copy_finished;
@@ -234,9 +234,9 @@ static void worker_process_copy(void * arg) {
 		goto copy_finished;
 	}
 
-	log_write(gettext("#%lu > flush file '%s'"), worker->job, worker->dest_file);
+	log_write(gettext("#%lu > flushing file '%s'"), worker->job, worker->dest_file);
 	if (fsync(fd_out) != 0) {
-		log_write(gettext("#%lu ! error while fsyncing from '%s' because %m"), worker->job, worker->dest_file);
+		log_write(gettext("#%lu ! error while flushing file from '%s' because %m"), worker->job, worker->dest_file);
 		close(fd_in);
 		close(fd_out);
 		goto copy_finished;
@@ -455,11 +455,11 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 			}
 		}
 	} else if (S_ISFIFO(info.st_mode)) {
-		log_write(gettext("#%lu ~ create fifo file '%s'"), i_job, output);
+		log_write(gettext("#%lu ~ create fifo '%s'"), i_job, output);
 
 		error = mkfifo(output, info.st_mode);
 		if (error != 0)
-			log_write(gettext("#%lu ! error, failed to create fifo file '%s' because %m"), i_job, output);
+			log_write(gettext("#%lu ! error, failed to create fifo '%s' because %m"), i_job, output);
 		else {
 			warning = chown(output, info.st_uid, info.st_gid);
 			if (warning != 0)
@@ -470,7 +470,7 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 		ssize_t nb_read = readlink(full_path, link, 256);
 		if (nb_read < 0) {
 			error = 1;
-			log_write(gettext("#%lu ! error, failed to create fifo file '%s' because %m"), i_job, output);
+			log_write(gettext("#%lu ! error, failed to reading symbolic link of '%s' because %m"), i_job, output);
 		} else
 			link[nb_read] = '\0';
 
