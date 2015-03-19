@@ -131,6 +131,8 @@ static void display() {
 	}
 	worker_release();
 
+	attron(COLOR_PAIR(3));
+
 	mvprintw(row - 1, 0, line);
 	mvprintw(row - 1, 1, "pCopy " PCOPY_VERSION);
 
@@ -143,6 +145,8 @@ static void display() {
 	ssize_t nb_write = strftime(buf, 16, "%X", &lnow);
 
 	mvprintw(row - 1, col - nb_write - 1, "%s", buf);
+
+	attroff(COLOR_PAIR(3));
 
 	refresh();
 }
@@ -225,9 +229,8 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	if (optind + 2 > argc) {
+	if (optind + 2 > argc)
 		return 1;
-	}
 
 	worker_process(&argv[optind], argc - optind - 1, argv[argc - 1]);
 
@@ -243,14 +246,20 @@ int main(int argc, char * argv[]) {
 
 		init_pair(1, COLOR_WHITE, COLOR_BLUE);
 		init_pair(2, COLOR_WHITE, COLOR_RED);
-		init_pair(3, COLOR_YELLOW, COLOR_BLUE);
+		init_pair(3, COLOR_WHITE, COLOR_BLUE);
 	}
 
 	log_reserve_message(row);
 
 	signal(SIGINT, quit);
 
+	char line[col + 1];
+	memset(line, ' ', col);
+	line[col] = '\0';
+
+	attron(COLOR_PAIR(3));
 	mvprintw(row - 1, 1, "pCopy " PCOPY_VERSION);
+	attroff(COLOR_PAIR(3));
 	refresh();
 
 	sleep(1);
