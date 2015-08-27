@@ -440,11 +440,20 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 				error = -1;
 				log_write(gettext("#%lu ! error, failed to list files from '%s' because %m"), i_job, output);
 			} else {
+				int length = strlen(full_path);
+				char * last = strrchr(full_path, '/');
+				if (last != NULL && last[1] == '\0') {
+					while (length > 0 && *last == '/') {
+						length--;
+						last--;
+					}
+				}
+
 				int i;
 				for (i = 0; i < nb_files; i++) {
 					if (error == 0) {
 						char * sub_file;
-						asprintf(&sub_file, "%s/%s", full_path, nl[i]->d_name);
+						asprintf(&sub_file, "%*s/%s", length, full_path, nl[i]->d_name);
 
 						error = worker_process_do2(sub_file + (partial_path - full_path), sub_file);
 					}

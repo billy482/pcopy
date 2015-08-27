@@ -6,7 +6,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Report-Msgid-Bugs-To: \n"
-        "POT-Creation-Date: 2015-03-19 19:15+0100\n"
+        "POT-Creation-Date: 2015-03-24 16:48+0100\n"
         "PO-Revision-Date: 2014-11-13 09:03+0100\n"
         "Last-Translator: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
         "Language-Team: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
@@ -113,8 +113,8 @@ msgstr  "#%lu @ copie le fichier ordinaire depuis « %s » vers « %s »"
 msgid   "#%lu ! error fatal, failed to open '%s' for writing because %m"
 msgstr  "#%lu ! erreur fatale, échec à l’ouverture de « %s » en écriture parce que %m"
 
-#: src/pcopy/worker.c:198 src/pcopy/worker.c:409 src/pcopy/worker.c:420 src/pcopy/worker.c:432 src/pcopy/worker.c:466
-#: src/pcopy/worker.c:495
+#: src/pcopy/worker.c:198 src/pcopy/worker.c:409 src/pcopy/worker.c:420 src/pcopy/worker.c:432 src/pcopy/worker.c:475
+#: src/pcopy/worker.c:504
 #, c-format
 msgid   "#%lu ! warning, failed to change owner and group of '%s' because %m"
 msgstr  "#%lu ! attention, échec en changeant le propriétaire et le groupe de « %s » parce que %m"
@@ -164,7 +164,7 @@ msgstr  "Démarrage de pCopy %s (compilé: %s %s)"
 msgid   "recompute %s of '%s'"
 msgstr  "recalcule du %s de « %s »"
 
-#: src/pcopy/worker.c:370 src/pcopy/worker.c:533
+#: src/pcopy/worker.c:370 src/pcopy/worker.c:542
 #, c-format
 msgid   "#%lu ! error, failed to create new thread"
 msgstr  "#%lu ! erreur, échec en créant un nouveau fil d’exécution"
@@ -208,37 +208,37 @@ msgstr  "#%lu ! erreur, échec lors de la création du répertoire « %s » pa
 msgid   "#%lu ! error, failed to list files from '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de l’inventaire des fichiers depuis « %s » parce que %m"
 
-#: src/pcopy/worker.c:458
+#: src/pcopy/worker.c:467
 #, c-format
 msgid   "#%lu ~ create fifo '%s'"
 msgstr  "#%lu ~ création d’un tube nommé « %s »"
 
-#: src/pcopy/worker.c:462
+#: src/pcopy/worker.c:471
 #, c-format
 msgid   "#%lu ! error, failed to create fifo '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la création du tube nommé « %s » parce que %m"
 
-#: src/pcopy/worker.c:473
+#: src/pcopy/worker.c:482
 #, c-format
 msgid   "#%lu ! error, failed to reading symbolic link of '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la lecture du lien symbolique de « %s » parce que %m"
 
-#: src/pcopy/worker.c:482
+#: src/pcopy/worker.c:491
 #, c-format
 msgid   "#%lu ~ create symbolic link '%s' => '%s'"
 msgstr  "#%lu ~ création du lien symbolique « %s » => « %s »"
 
-#: src/pcopy/worker.c:485
+#: src/pcopy/worker.c:494
 #, c-format
 msgid   "#%lu ! error, failed to create symbolic link '%s' because %m"
 msgstr  "#%lu ! erreur, échec lors de la création du lien symbolique « %s » parce que %m"
 
-#: src/pcopy/worker.c:491
+#: src/pcopy/worker.c:500
 #, c-format
 msgid   "#%lu ! warning, failed to change permission of '%s' because %m"
 msgstr  "#%lu ! attention, échec en changeant les permissions de « %s » parce que %m"
 
-#: src/pcopy/worker.c:523
+#: src/pcopy/worker.c:532
 #, c-format
 msgid   "copy from '%s' to '%s'"
 msgstr  "copie depuis « %s » vers « %s »"
