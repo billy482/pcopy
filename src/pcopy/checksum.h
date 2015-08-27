@@ -39,9 +39,9 @@
 
 struct checksum {
 	struct checksum_ops {
-		char * (*digest)(struct checksum * checksum) __attribute__((nonnull,warn_unused_result));
-		void (*free)(struct checksum * checksum) __attribute__((nonnull));
-		ssize_t (*update)(struct checksum * checksum, const void * data, ssize_t length) __attribute__((nonnull(1)));
+		char * (*digest)(struct checksum * checksum) __attribute__((warn_unused_result));
+		void (*free)(struct checksum * checksum);
+		ssize_t (*update)(struct checksum * checksum, const void * data, ssize_t length);
 	} * ops;
 
 	void * data;
