@@ -48,7 +48,7 @@ endif
 
 
 # compilation flags
-CFLAGS		:= -std=gnu99 -pipe -O0 -ggdb3 -D_FORTIFY_SOURCE=2 -Wall -Wextra -Wabi -Werror-implicit-function-declaration -Wmissing-prototypes -Wformat-security -Werror=format-security -fstack-protector --param ssp-buffer-size=4 $(addprefix -I,${INCLUDE_DIR})
+CFLAGS		:= -std=gnu99 -pipe -O2 -ggdb3 -D_FORTIFY_SOURCE=2 -Wall -Wextra -Wabi -Werror-implicit-function-declaration -Wmissing-prototypes -Wformat-security -Werror=format-security -fstack-protector --param ssp-buffer-size=4 $(addprefix -I,${INCLUDE_DIR})
 LDFLAGS		:=
 
 CSCOPE_OPT	:= -b -R -s src -U -I include
@@ -73,15 +73,14 @@ $(1)_DEPEND_DIR	:= $$(patsubst src/%,${DEPEND_DIR}/%,$${$(1)_SRC_DIR})
 $(1)_SRC_FILES	:= $$(sort $$(shell test -d $${$(1)_SRC_DIR} && find $${$(1)_SRC_DIR} -name '*.c'))
 $(1)_HEAD_FILES	:= $$(sort $$(shell test -d $${$(1)_SRC_DIR} && find $${$(1)_SRC_DIR} -name '*.h'))
 $(1)_OBJ_FILES	:= $$(sort $$(patsubst src/%.c,${BUILD_DIR}/%.o,$${$(1)_SRC_FILES}))
-$(1)_DEP_FILES	:= $$(sort $$(shell test -d $${$(1)_DEPEND_DIR} && find $${$(1)_DEPEND_DIR} -name '*.d'))
+$(1)_DEP_FILES  := $$(sort $$(patsubst src/%.c,${DEPEND_DIR}/%.d,$${$(1)_SRC_FILES}))
 
-prepare_$(1): ${CHCKSUM_DIR}/$${$(1)_CHCKSUM_FILE}
+$(1)_OBJ_DIRS := $$(sort $$(dir $${$(1)_OBJ_FILES}))
+$(1)_DEP_DIRS := $$(patsubst ${BUILD_DIR}/%,${DEPEND_DIR}/%,$${$(1)_OBJ_DIRS})
 
-${CHCKSUM_DIR}/$${$(1)_CHCKSUM_FILE}: $${$(1)_SRC_FILES} $${$(1)_HEAD_FILES}
-	@echo " CHCKSUM    $$@"
-	@./script/checksum.pl $(1) ${CHCKSUM_DIR}/$${$(1)_CHCKSUM_FILE} $$(sort $${$(1)_SRC_FILES} $${$(1)_HEAD_FILES})
 
-$$($(1)_BIN): $$($(1)_DEPEND_LIB) $$($(1)_OBJ_FILES)
+$(1)_BIN_DIR := $$(dir $$($(1)_BIN))
+$${$(1)_BIN}: ${CHCKSUM_DIR}/$${$(1)_CHCKSUM_FILE} $${$(1)_DEPEND_LIB} $${$(1)_OBJ_FILES} | $${$(1)_BIN_DIR}
 	@echo " LD         $$@"
 	@${CC} -o $$@ $$($(1)_OBJ_FILES) ${LDFLAGS} $$($(1)_LD)
 #	@${OBJCOPY} --only-keep-debug $$@ $$@.debug
@@ -89,7 +88,8 @@ $$($(1)_BIN): $$($(1)_DEPEND_LIB) $$($(1)_OBJ_FILES)
 #	@${OBJCOPY} --add-gnu-debuglink=$$@.debug $$@
 #	@chmod -x $$@.debug
 
-$$($(1)_LIB): $$($(1)_DEPEND_LIB) $$($(1)_OBJ_FILES)
+$(1)_LIB_DIR := $$(dir $$($(1)_LIB))
+$$($(1)_LIB): ${CHCKSUM_DIR}/$${$(1)_CHCKSUM_FILE} $${$(1)_DEPEND_LIB} $${$(1)_OBJ_FILES} | $${$(1)_LIB_DIR}
 	@echo " LD         $$@"
 	@${CC} -o $$@.$$($(1)_LIB_VERSION) $$($(1)_OBJ_FILES) -shared -Wl,-soname,$$($(1)_SONAME) ${LDFLAGS} $$($(1)_LD)
 #	@objcopy --only-keep-debug $$@.$$($(1)_LIB_VERSION) $$@.$$($(1)_LIB_VERSION).debug
@@ -99,15 +99,25 @@ $$($(1)_LIB): $$($(1)_DEPEND_LIB) $$($(1)_OBJ_FILES)
 	@ln -sf $$(notdir $$@.$$($(1)_LIB_VERSION)) $$@.$$(basename $$($(1)_LIB_VERSION))
 	@ln -sf $$($(1)_SONAME) $$@
 
-$$($(1)_BUILD_DIR)/%.o: $$($(1)_SRC_DIR)/%.c
+$${$(1)_BUILD_DIR}/%.o: $${$(1)_SRC_DIR}/%.c | $${$(1)_OBJ_DIRS} $${$(1)_DEP_DIRS}
 	@echo " CC         $$@"
-	@${CC} -c $${CFLAGS} $$($(1)_CFLAG) -Wp,-MD,$$($(1)_DEPEND_DIR)/$$*.d,-MT,$$@ -o $$@ $$<
+	@${CC} -c $${CFLAGS} $$($(1)_CFLAG) -Wp,-MD,$$($(1)_DEPEND_DIR)/$$*.d,-MT,$$@ -o $$@ $$(firstword $$<)
 
-BINS		+= $$($(1)_BIN) $$($(1)_LIB)
-SRC_FILES	+= $$($(1)_SRC_FILES)
-HEAD_FILES	+= $$($(1)_HEAD_FILES)
-DEP_FILES	+= $$($(1)_DEP_FILES)
-OBJ_FILES	+= $$($(1)_OBJ_FILES)
+${CHCKSUM_DIR}/$${$(1)_CHCKSUM_FILE}: $${$(1)_SRC_FILES} $${$(1)_HEAD_FILES} | ${CHCKSUM_DIR}
+	@echo " CHCKSUM    $$@"
+	@./script/checksum.pl $(1) ${CHCKSUM_DIR}/$${$(1)_CHCKSUM_FILE} $$(sort $${$(1)_SRC_FILES} $${$(1)_HEAD_FILES})
+
+$${$(1)_DEP_DIRS} $${$(1)_OBJ_DIRS}:
+	@echo " MKDIR      $$@"
+	@mkdir -p $$@
+
+
+BINS  += $${$(1)_BIN} $${$(1)_LIB} $${$(1)_LOCALE_MO}
+
+SRC_FILES  += $${$(1)_SRC_FILES}
+HEAD_FILES += $${$(1)_HEAD_FILES}
+DEP_FILES  += $${$(1)_DEP_FILES}
+
 
 ifneq (,$$($(1)_LOCALE))
 $(1)_LOCALE_PO	:= $$(sort $$(wildcard $$($(1)_LOCALE).*.po))
@@ -172,17 +182,12 @@ $(foreach prog,${TEST_BIN_SYMS},$(eval $(call TEST_template,${prog})))
 
 
 BIN_DIRS	:= $(sort $(dir ${BINS}))
-OBJ_DIRS	:= $(sort $(dir ${OBJ_FILES}))
-DEP_DIRS	:= $(patsubst ${BUILD_DIR}/%,${DEPEND_DIR}/%,${OBJ_DIRS})
 
 
-# phony target
 .DEFAULT_GOAL	:= all
-.PHONY: all binaries clean clean-depend cscope ctags debug distclean lib locales package prepare realclean stat stat-extra TAGS tar test
+.PHONY: all check clean cscope ctags debug distclean doc realclean stat stat-extra TAGS tar test
 
-all: binaries locales
-
-binaries: prepare $(sort ${BINS})
+all: cscope tags ${VERSION_FILE} ${BINS} locales
 
 check:
 	@echo 'Checking source files...'
@@ -193,21 +198,17 @@ clean:
 	@echo ' RM         -Rf $(foreach dir,${BIN_DIRS},$(word 1,$(subst /, ,$(dir)))) ${BUILD_DIR} locales'
 	@rm -Rf $(foreach dir,${BIN_DIRS},$(word 1,$(subst /, ,$(dir)))) ${BUILD_DIR} ${LOCALE_MO}
 
-clean-depend: clean
-	@echo ' RM         -Rf depend'
-	@rm -Rf depend
-
 cscope: cscope.out
 
 ctags TAGS: tags
 
-debug: binaries
+debug: all
 	@echo ' GDB'
 	${GDB} bin/pCopy
 
 distclean realclean: clean
-	@echo ' RM         -Rf cscope.out doc ${CHCKSUM_DIR} ${DEPEND_DIR} tags ${VERSION_FILE}'
-	@rm -Rf cscope.out doc ${CHCKSUM_DIR} ${DEPEND_DIR} tags ${VERSION_FILE}
+	@echo ' RM         -Rf configure.vars cscope.out doc ${CHCKSUM_DIR} ${DEPEND_DIR} tags ${VERSION_FILE}'
+	@rm -Rf configure.vars cscope.out doc ${CHCKSUM_DIR} ${DEPEND_DIR} tags ${VERSION_FILE}
 
 doc: Doxyfile ${LIBOBJECT_SRC_FILES} ${HEAD_FILES}
 	@echo ' DOXYGEN'
@@ -219,12 +220,9 @@ package:
 	@echo ' CLEAN'
 	@dh_clean
 	@echo ' UPDATE src'
-	@${GIT} archive --format=tar -o ../${GIT_ARCHIVE} debian
-	@gzip -9vf ../${GIT_ARCHIVE}
+	@${GIT} archive --format=tar.gz -o ../${GIT_ARCHIVE} debian
 	@echo ' BUILD package'
 	@dpkg-buildpackage -us -uc -rfakeroot
-
-prepare: ${BIN_DIRS} ${CHCKSUM_DIR} ${DEP_DIRS} ${OBJ_DIRS} $(addprefix prepare_,${BIN_SYMS}) $(addprefix prepare_,${TEST_BIN_SYMS}) ${VERSION_FILE} cscope tags
 
 rebuild: clean all
 
@@ -261,6 +259,7 @@ tags: ${SRC_FILES} ${HEAD_FILES}
 	@echo " CTAGS"
 	@${CTAGS} ${CTAGS_OPT}
 
-ifneq (${DEP_FILES},)
-include ${DEP_FILES}
+ifeq ($(findstring $(MAKECMDGOALS),check clean distclean doc stat),)
+-include configure.vars
+-include ${DEP_FILES}
 endif
