@@ -197,7 +197,9 @@ int thread_pool_run(const char * thread_name, void (*function)(void * arg), void
 
 static void thread_pool_set_name(pid_t tid, const char * name) {
 	char * path;
-	asprintf(&path, "/proc/%d/task/%d/comm", thread_pool_pid, tid);
+	int size = asprintf(&path, "/proc/%d/task/%d/comm", thread_pool_pid, tid);
+	if (size < 0)
+		return;
 
 	int fd = open(path, O_WRONLY);
 	if (fd < 0) {

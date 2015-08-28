@@ -357,13 +357,20 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 			worker->src_file = filename;
 			worker->dest_file = NULL;
 			worker->digest = digest;
-			asprintf(&worker->description, gettext("recompute %s of '%s'"), chck_dr->name, filename);
+			int size = asprintf(&worker->description, gettext("recompute %s of '%s'"), chck_dr->name, filename);
 			worker->pct = 0;
+
+			if (size < 0)
+				break;
 
 			pthread_mutex_unlock(&worker_lock);
 
 			char * name;
-			asprintf(&name, "worker #%lu", i_job);
+			size = asprintf(&name, "worker #%lu", i_job);
+
+			if (size < 0)
+				break;
+
 			int error = thread_pool_run(name, worker_process_checksum, worker);
 
 			if (error != 0)
@@ -395,7 +402,9 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 	}
 
 	char * output = NULL;
-	asprintf(&output, "%s%s", worker_output, partial_path);
+	int size = asprintf(&output, "%s%s", worker_output, partial_path);
+	if (size < 0)
+		return -2;
 
 	if (S_ISBLK(info.st_mode)) {
 		log_write(gettext("#%lu ~ create block device '%s', major: %d, minor: %d"), i_job, output, (int) info.st_rdev >> 8, (int) info.st_rdev & 0xFF);
@@ -453,9 +462,12 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 				for (i = 0; i < nb_files; i++) {
 					if (error == 0) {
 						char * sub_file;
-						asprintf(&sub_file, "%*s/%s", length, full_path, nl[i]->d_name);
+						int size = asprintf(&sub_file, "%*s/%s", length, full_path, nl[i]->d_name);
 
-						error = worker_process_do2(sub_file + (partial_path - full_path), sub_file);
+						if (size >= 0)
+							error = worker_process_do2(sub_file + (partial_path - full_path), sub_file);
+						else
+							error = 2;
 					}
 
 					free(nl[i]);
@@ -529,13 +541,20 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 		worker->src_file = strdup(full_path);
 		worker->dest_file = strdup(output);
 		worker->digest = NULL;
-		asprintf(&worker->description, gettext("copy from '%s' to '%s'"), full_path, output);
+		int size = asprintf(&worker->description, gettext("copy from '%s' to '%s'"), full_path, output);
 		worker->pct = 0;
 
 		pthread_mutex_unlock(&worker_lock);
 
+		if (size < 0)
+			return -2;
+
 		char * name;
-		asprintf(&name, "worker #%lu", i_job);
+		size = asprintf(&name, "worker #%lu", i_job);
+
+		if (size < 0)
+			return -2;
+
 		error = thread_pool_run(name, worker_process_copy, worker);
 
 		if (error != 0)

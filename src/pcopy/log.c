@@ -98,8 +98,11 @@ void log_write(const char * format, ...) {
 
 	va_list va;
 	va_start(va, format);
-	vasprintf(&message, format, va);
+	int size = vasprintf(&message, format, va);
 	va_end(va);
+
+	if (size < 0)
+		return;
 
 	struct timeval now;
 	gettimeofday(&now, NULL);
@@ -122,13 +125,15 @@ void log_write(const char * format, ...) {
 		log_nb_messages++;
 	}
 
-	asprintf(&log->message, "[%s] %s", buffer, message);
-	log->next = NULL;
+	size = asprintf(&log->message, "[%s] %s", buffer, message);
 
-	if (log_first == NULL)
-		log_first = log_last = log;
-	else
-		log_last = log_last->next = log;
+	if (size >= 0) {
+		log->next = NULL;
+		if (log_first == NULL)
+			log_first = log_last = log;
+		else
+			log_last = log_last->next = log;
+	}
 
 	pthread_mutex_unlock(&log_lock);
 
