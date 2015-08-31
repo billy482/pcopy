@@ -37,6 +37,7 @@
 struct checksum * checksum_md5_new_checksum(void);
 struct checksum * checksum_sha1_new_checksum(void);
 struct checksum * checksum_sha256_new_checksum(void);
+struct checksum * checksum_sha512_new_checksum(void);
 
 void digest_convert_to_hex(unsigned char * digest, ssize_t length, char * hex_digest);
 

@@ -29,117 +29,83 @@
 *  Copyright (C) 2015, Guillaume Clercin <clercin.guillaume@gmail.com>       *
 \****************************************************************************/
 
-// open
-#include <fcntl.h>
-// dprintf
-#include <stdio.h>
-// memmove, strcmp, strchr, strdup
+// free, malloc
+#include <stdlib.h>
+// sha512_digest, sha512_init, sha512_update
+#include <nettle/sha2.h>
+// strdup
 #include <string.h>
-// open
-#include <sys/stat.h>
-// lseek, open
-#include <sys/types.h>
-// lseek
-#include <unistd.h>
 
-#include "checksum.h"
-#include "checksum/digest.h"
+#include "digest.h"
 
-static int checksum_fd = -1;
-
-static struct checksum_driver checksum_drivers[] = {
-	{ "md5",    checksum_md5_new_checksum },
-	{ "sha1",   checksum_sha1_new_checksum },
-	{ "sha256", checksum_sha256_new_checksum },
-	{ "sha512", checksum_sha512_new_checksum },
-
-	{ NULL, NULL },
+struct checksum_sha512 {
+	struct sha512_ctx sha512;
+	char digest[SHA512_DIGEST_SIZE * 2 + 1];
 };
 
-static struct checksum_driver * checksum_default_driver = checksum_drivers;
+static char * checksum_sha512_digest(struct checksum * checksum);
+static void checksum_sha512_free(struct checksum * checksum);
+static ssize_t checksum_sha512_update(struct checksum * checksum, const void * data, ssize_t length);
+
+static struct checksum_ops checksum_sha512_ops = {
+	.digest = checksum_sha512_digest,
+	.free   = checksum_sha512_free,
+	.update = checksum_sha512_update,
+};
 
 
-void checksum_add(const char * digest, const char * path) {
-	if (checksum_fd >= 0)
-		dprintf(checksum_fd, "%s  %s\n", digest, path);
-}
-
-void checksum_create(const char * filename) {
-	checksum_fd = open(filename, O_RDWR | O_TRUNC | O_CREAT, 0644);
-}
-
-struct checksum_driver * checksum_digests() {
-	return checksum_drivers;
-}
-
-struct checksum_driver * checksum_get_default() {
-	return checksum_default_driver;
-}
-
-bool checksum_has_checksum_file() {
-	return checksum_fd > -1;
-}
-
-bool checksum_parse(char ** digest, char ** path) {
-	static char buffer[16384];
-	static ssize_t nb_buffer_used = 0;
-
-	char * end = NULL;
-	if (nb_buffer_used > 0)
-		end = strchr(buffer, '\n');
-
-	for (;;) {
-		if (end != NULL) {
-			char * space = strchr(buffer, ' ');
-			if (space == NULL)
-				return false;
-
-			*space = '\0';
-			*digest = strdup(buffer);
-
-			space += 2;
-			*end = '\0';
-			*path = strdup(space);
-
-			end++;
-			nb_buffer_used -= end - buffer;
-			memmove(buffer, end, nb_buffer_used);
-
-			return true;
-		}
-
-		ssize_t nb_read = read(checksum_fd, buffer + nb_buffer_used, 16384 - nb_buffer_used);
-		if (nb_read < 0)
-			return false;
-
-		if (nb_read == 0)
-			end = buffer + nb_buffer_used;
-		else
-			nb_buffer_used += nb_read;
-
-		end = strchr(buffer, '\n');
-		if (end == NULL)
-			break;
-	}
-
-	return false;
-}
-
-void checksum_rewind() {
-	lseek(checksum_fd, 0, SEEK_SET);
-}
-
-bool checksum_set_default(const char * checksum) {
+static char * checksum_sha512_digest(struct checksum * checksum) {
 	if (checksum == NULL)
-		return false;
+		return NULL;
 
-	struct checksum_driver * driver = checksum_drivers;
-	for (; driver->name != NULL; driver++)
-		if (strcmp(checksum, driver->name) == 0) {
-			checksum_default_driver = driver;
-			return true;
-		}
+	struct checksum_sha512 * self = checksum->data;
+	if (self->digest[0] != '\0')
+		return strdup(self->digest);
 
-	return false;
+	struct sha512_ctx sha512 = self->sha512;
+	unsigned char digest[SHA512_DIGEST_SIZE];
+	sha512_digest(&sha512, SHA512_DIGEST_SIZE, digest);
+
+	digest_convert_to_hex(digest, SHA512_DIGEST_SIZE, self->digest);
+
+	return strdup(self->digest);
+}
+
+static void checksum_sha512_free(struct checksum * checksum) {
+	if (checksum == NULL)
+		return;
+
+	struct checksum_sha512 * self = checksum->data;
+
+	unsigned char digest[SHA512_DIGEST_SIZE];
+	sha512_digest(&self->sha512, SHA512_DIGEST_SIZE, digest);
+
+	free(self);
+
+	checksum->data = NULL;
+	checksum->ops = NULL;
+
+	free(checksum);
+}
+
+struct checksum * checksum_sha512_new_checksum() {
+	struct checksum * checksum = malloc(sizeof(struct checksum));
+	checksum->ops = &checksum_sha512_ops;
+
+	struct checksum_sha512 * self = malloc(sizeof(struct checksum_sha512));
+	sha512_init(&self->sha512);
+	*self->digest = '\0';
+
+	checksum->data = self;
+	return checksum;
+}
+
+static ssize_t checksum_sha512_update(struct checksum * checksum, const void * data, ssize_t length) {
+	if (checksum == NULL || data == NULL || length < 1)
+		return -1;
+
+	struct checksum_sha512 * self = checksum->data;
+	sha512_update(&self->sha512, length, data);
+	return length;
 }
 
