@@ -53,7 +53,7 @@ struct checksum_driver {
 };
 
 void checksum_add(const char * digest, const char * path);
-void checksum_create(const char * filename);
+bool checksum_create(const char * filename);
 struct checksum_driver * checksum_digests(void);
 struct checksum_driver * checksum_get_default(void);
 bool checksum_has_checksum_file(void);

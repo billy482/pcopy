@@ -201,7 +201,7 @@ int main(int argc, char * argv[]) {
 					for (i = 0; drivers->name != NULL; i++, drivers++) {
 						if (i > 0)
 							printf(", ");
-						printf("'%s'", drivers->name);
+						printf(gettext("'%s'"), drivers->name);
 					}
 					printf("\n");
 
@@ -215,7 +215,10 @@ int main(int argc, char * argv[]) {
 				break;
 
 			case OPT_CHECKSUM_FILE:
-				checksum_create(optarg);
+				if (!checksum_create(optarg)) {
+					printf(gettext("Error: failed to create checksum file '%s'\n"), optarg);
+					return 1;
+				}
 				break;
 
 			case OPT_HELP:
@@ -223,7 +226,10 @@ int main(int argc, char * argv[]) {
 				return 0;
 
 			case OPT_LOG_FILE:
-				log_open_log_file(optarg);
+				if (!log_open_log_file(optarg)) {
+					printf(gettext("Error: failed to create log file '%s'\n"), optarg);
+					return 1;
+				}
 				break;
 
 			case OPT_PAUSE:

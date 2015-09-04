@@ -34,9 +34,11 @@
 #include <pthread.h>
 // open
 #include <fcntl.h>
+// gettext
+#include <libintl.h>
 // va_end, va_start
 #include <stdarg.h>
-// asprintf, dprintf, vasprintf
+// asprintf, dprintf, printf, vasprintf
 #include <stdio.h>
 // free, malloc
 #include <stdlib.h>
@@ -65,8 +67,14 @@ struct log * log_get(unsigned int * nb_messages) {
 	return log_first;
 }
 
-void log_open_log_file(const char * filename) {
+bool log_open_log_file(const char * filename) {
 	log_fd = open(filename, O_RDWR | O_APPEND | O_CREAT, 0644);
+	if (log_fd >= 0)
+		return true;
+
+	printf(gettext("Error while opening file '%s' because %m"), filename);
+
+	return false;
 }
 
 void log_release() {

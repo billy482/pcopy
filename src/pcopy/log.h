@@ -32,6 +32,9 @@
 #ifndef __PCOPY_LOG_H__
 #define __PCOPY_LOG_H__
 
+// bool
+#include <stdbool.h>
+
 struct log {
 	char * message;
 
@@ -39,7 +42,7 @@ struct log {
 };
 
 struct log * log_get(unsigned int * nb_messages);
-void log_open_log_file(const char * filename);
+bool log_open_log_file(const char * filename);
 void log_release(void);
 void log_reserve_message(unsigned int nb_messages);
 void log_write(const char * format, ...) __attribute__ ((format (printf, 1, 2)));

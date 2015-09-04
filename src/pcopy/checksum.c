@@ -31,7 +31,9 @@
 
 // open
 #include <fcntl.h>
-// dprintf
+// gettext
+#include <libintl.h>
+// dprintf, printf
 #include <stdio.h>
 // memmove, strcmp, strchr, strdup
 #include <string.h>
@@ -64,8 +66,14 @@ void checksum_add(const char * digest, const char * path) {
 		dprintf(checksum_fd, "%s  %s\n", digest, path);
 }
 
-void checksum_create(const char * filename) {
+bool checksum_create(const char * filename) {
 	checksum_fd = open(filename, O_RDWR | O_TRUNC | O_CREAT, 0644);
+	if (checksum_fd >= 0)
+		return true;
+
+	printf(gettext("Error while opening file '%s' because %m"), filename);
+
+	return false;
 }
 
 struct checksum_driver * checksum_digests() {

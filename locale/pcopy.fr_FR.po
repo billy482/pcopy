@@ -6,7 +6,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Report-Msgid-Bugs-To: \n"
-        "POT-Creation-Date: 2015-08-28 09:07+0200\n"
+        "POT-Creation-Date: 2015-09-04 09:11+0200\n"
         "PO-Revision-Date: 2014-11-13 09:03+0100\n"
         "Last-Translator: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
         "Language-Team: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
@@ -16,53 +16,73 @@ msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Content-Transfer-Encoding: 8bit\n"
         "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
+#: src/pcopy/checksum.c:74 src/pcopy/log.c:75
+#, c-format
+msgid   "Error while opening file '%s' because %m"
+msgstr  "Erreur en ouvrant le fichier « %s » parceque %m"
+
 #: src/pcopy/pcopy.c:199
 #, c-format
 msgid   "Available cryptographic hash functions: "
 msgstr  "Fonctions de hachage cryptographique : "
 
-#: src/pcopy/pcopy.c:234
+#: src/pcopy/pcopy.c:204
+#, c-format
+msgid   "'%s'"
+msgstr  "« %s »"
+
+#: src/pcopy/pcopy.c:219
+#, c-format
+msgid   "Error: failed to create checksum file '%s'\n"
+msgstr  "Erreur : échec lors de la création du fichier d’empreinte « %s »\n"
+
+#: src/pcopy/pcopy.c:230
+#, c-format
+msgid   "Error: failed to create log file '%s'\n"
+msgstr  "Erreur : échec lors de la création du fichier d’enregistrement « %s »\n"
+
+#: src/pcopy/pcopy.c:240
 #, c-format
 msgid   "pCopy: parallel copying and checksumming\n"
 msgstr  "pCopy : copie et calcul d’empreinte en parralèle\n"
 
-#: src/pcopy/pcopy.c:235
+#: src/pcopy/pcopy.c:241
 #, c-format
 msgid   "version: %s, build: %s %s\n"
 msgstr  "version : %s, compilé : %s %s \n"
 
-#: src/pcopy/pcopy.c:302
+#: src/pcopy/pcopy.c:308
 #, c-format
 msgid   "Usage: pcopy [options] <src-files>... <dest-file>\n"
 msgstr  "Utilisation : pcopy [options] <src-files>... <dest-file>\n"
 
-#: src/pcopy/pcopy.c:303
+#: src/pcopy/pcopy.c:309
 #, c-format
 msgid   "  -c, --checksum <hash>      : Use <hash> as hash function,\n"
-msgstr  "  -c, --checksum <hash>         : Utilise <hash> comme fonction de hachage,\n"
+msgstr  "  -c, --checksum <hash>         : Utilisez <hash> comme fonction de hachage,\n"
 
-#: src/pcopy/pcopy.c:304
+#: src/pcopy/pcopy.c:310
 #, c-format
 msgid   "                               Use 'help' to show available hash functions\n"
-msgstr  "                                  Utilise « help » pour afficher les fonctions de hachage disponibles\n"
+msgstr  "                                  Utilisez « help » pour afficher les fonctions de hachage disponibles\n"
 
-#: src/pcopy/pcopy.c:305
+#: src/pcopy/pcopy.c:311
 #, c-format
 msgid   "  -C, --checksum-file <file> : Defer checksum checking after copy and write checksum into <file>\n"
 msgstr  "  -C, --checksum-file <fichier> : Différe la vérification de l’empreinte cryptographique après la copie et écrit "
         "l’empreinte dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:306
+#: src/pcopy/pcopy.c:312
 #, c-format
 msgid   "  -h, --help                 : Show this and exit\n"
 msgstr  "  -h, --help                    : Affiche ceci et quite\n"
 
-#: src/pcopy/pcopy.c:307
+#: src/pcopy/pcopy.c:313
 #, c-format
 msgid   "  -l, --log-file <file>      : Log also into <file>\n"
 msgstr  "  -l, --log-file <fichier>      : Enregistre aussi dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:308
+#: src/pcopy/pcopy.c:314
 #, c-format
 msgid   "  -p, --pause                : Pause at the end of copy\n"
         "\n"
@@ -71,7 +91,7 @@ msgstr  "  -p, --pause                   : Pause à la fin de la copie\n"
 
 #: src/pcopy/thread.c:167
 msgid   "thread_pool_run: error, not enought memory to start new thread"
-msgstr  "thread_pool_run : errur, pas assez de mémoire pour démarrer un nouveau fil d’exécution"
+msgstr  "thread_pool_run : erreur, pas assez de mémoire pour démarrer un nouveau fil d’exécution"
 
 #: src/pcopy/worker.c:118
 #, c-format
