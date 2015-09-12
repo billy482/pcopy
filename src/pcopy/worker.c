@@ -55,6 +55,7 @@
 
 #include "checksum.h"
 #include "log.h"
+#include "option.h"
 #include "thread.h"
 #include "util.h"
 #include "worker.h"
@@ -78,7 +79,7 @@ static pthread_mutex_t worker_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 static void worker_process_checksum(void * arg);
 static void worker_process_copy(void * arg);
 static void worker_process_do(void * arg);
-static int worker_process_do2(const char * partial_path, const char * full_path);
+static int worker_process_do2(const char * partial_path, const char * full_path, const struct pcopy_option * option);
 
 
 bool worker_finished() {
@@ -101,13 +102,13 @@ struct worker * worker_get(unsigned int * nb_working_workers, unsigned int * nb_
 	return workers;
 }
 
-void worker_process(char * inputs[], unsigned int nb_inputs, const char * output) {
+void worker_process(char * inputs[], unsigned int nb_inputs, const char * output, struct pcopy_option * option) {
 	worker_inputs = inputs;
 	worker_nb_inputs = nb_inputs;
 	worker_output = output;
 	worker_output_length = strlen(worker_output);
 
-	thread_pool_run("main worker", worker_process_do, NULL);
+	thread_pool_run("main worker", worker_process_do, option);
 }
 
 static void worker_process_checksum(void * arg) {
@@ -141,6 +142,8 @@ static void worker_process_checksum(void * arg) {
 
 		float done = nb_total_read;
 		worker->pct = done / info.st_size;
+
+		util_check_load_average(worker->option->load_average);
 	}
 
 	if (nb_read < 0)
@@ -218,6 +221,8 @@ static void worker_process_copy(void * arg) {
 		worker->pct = done / info.st_size;
 
 		chck->ops->update(chck, buffer, nb_read);
+
+		util_check_load_average(worker->option->load_average);
 	}
 
 	char * computed = chck->ops->digest(chck);
@@ -233,6 +238,17 @@ static void worker_process_copy(void * arg) {
 		close(fd_out);
 		goto copy_finished;
 	}
+
+	pthread_mutex_lock(&worker_lock);
+
+	char * old_description = worker->description;
+	int size = asprintf(&worker->description, gettext("flushing data of '%s'"), worker->dest_file);
+	if (size > 0)
+		free(old_description);
+	else
+		worker->description = old_description;
+
+	pthread_mutex_unlock(&worker_lock);
 
 	log_write(gettext("#%lu > flushing file '%s'"), worker->job, worker->dest_file);
 	if (fsync(fd_out) != 0) {
@@ -267,6 +283,8 @@ static void worker_process_copy(void * arg) {
 		float done = nb_total_read;
 		done /= 2;
 		worker->pct = 0.5 + done / info.st_size;
+
+		util_check_load_average(worker->option->load_average);
 	}
 
 	if (nb_read < 0)
@@ -297,8 +315,10 @@ copy_finished:
 	sem_post(&worker_jobs);
 }
 
-static void worker_process_do(void * arg __attribute__((unused))) {
-	int nb_cpus = util_nb_cpus();
+static void worker_process_do(void * arg) {
+	const struct pcopy_option * option = arg;
+
+	int nb_cpus = option->nb_jobs > 0 ? option->nb_jobs : util_nb_cpus();
 	sem_init(&worker_jobs, 0, nb_cpus);
 
 	worker_running = true;
@@ -313,7 +333,7 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 	for (i = 0; i < worker_nb_inputs && failed == 0; i++) {
 		const char * inputs = worker_inputs[i];
 		char * src_input = strrchr(inputs, '/');
-		failed = worker_process_do2(src_input, inputs);
+		failed = worker_process_do2(src_input, inputs, option);
 	}
 
 	int free_job = 0;
@@ -359,6 +379,7 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 			worker->digest = digest;
 			int size = asprintf(&worker->description, gettext("recompute %s of '%s'"), chck_dr->name, filename);
 			worker->pct = 0;
+			worker->option = option;
 
 			if (size < 0)
 				break;
@@ -391,7 +412,7 @@ static void worker_process_do(void * arg __attribute__((unused))) {
 	worker_running = false;
 }
 
-static int worker_process_do2(const char * partial_path, const char * full_path) {
+static int worker_process_do2(const char * partial_path, const char * full_path, const struct pcopy_option * option) {
 	unsigned long i_job = ++worker_n_jobs;
 
 	struct stat info;
@@ -465,7 +486,7 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 						int size = asprintf(&sub_file, "%*s/%s", length, full_path, nl[i]->d_name);
 
 						if (size >= 0)
-							error = worker_process_do2(sub_file + (partial_path - full_path), sub_file);
+							error = worker_process_do2(sub_file + (partial_path - full_path), sub_file, option);
 						else
 							error = 2;
 					}
@@ -543,6 +564,7 @@ static int worker_process_do2(const char * partial_path, const char * full_path)
 		worker->digest = NULL;
 		int size = asprintf(&worker->description, gettext("copy from '%s' to '%s'"), full_path, output);
 		worker->pct = 0;
+		worker->option = option;
 
 		pthread_mutex_unlock(&worker_lock);
 

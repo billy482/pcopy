@@ -53,6 +53,7 @@
 
 #include "checksum.h"
 #include "log.h"
+#include "option.h"
 #include "util.h"
 #include "worker.h"
 
@@ -161,14 +162,21 @@ static void display() {
 
 int main(int argc, char * argv[]) {
 	setlocale(LC_ALL, "");
-	bindtextdomain("pcopy", "/usr/share/locale/");
+	bindtextdomain("pcopy", "locale/");
 	textdomain("pcopy");
+
+	static struct pcopy_option option = {
+		.nb_jobs      = 0,
+		.load_average = 0,
+	};
 
 	enum {
 		OPT_CHECKSUM      = 'c',
 		OPT_CHECKSUM_FILE = 'C',
 		OPT_HELP          = 'h',
-		OPT_LOG_FILE      = 'l',
+		OPT_JOB           = 'j',
+		OPT_LOAD_AVERAGE  = 'l',
+		OPT_LOG_FILE      = 'L',
 		OPT_PAUSE         = 'p',
 		OPT_VERSION       = 'V',
 	};
@@ -177,6 +185,8 @@ int main(int argc, char * argv[]) {
 		{ "checksum",      1, 0, OPT_CHECKSUM },
 		{ "checksum-file", 1, 0, OPT_CHECKSUM_FILE },
 		{ "help",          0, 0, OPT_HELP },
+		{ "jobs",          1, 0, OPT_JOB },
+		{ "load-average",  1, 0, OPT_LOAD_AVERAGE },
 		{ "pause",         0, 0, OPT_PAUSE },
 		{ "version",       0, 0, OPT_VERSION },
 
@@ -187,7 +197,7 @@ int main(int argc, char * argv[]) {
 
 	static int lo;
 	for (;;) {
-		int c = getopt_long(argc, argv, "c:C:h?l:pV", op, &lo);
+		int c = getopt_long(argc, argv, "c:C:h?j:l:L:pV", op, &lo);
 		if (c == -1)
 			break;
 
@@ -225,6 +235,20 @@ int main(int argc, char * argv[]) {
 				show_help();
 				return 0;
 
+			case OPT_JOB:
+				if (sscanf(optarg, "%u", &option.nb_jobs) < 1) {
+					printf(gettext("Error: failed to parse argument for --jobs parameter, '%s' should be an positive integer\n"), optarg);
+					return 1;
+				}
+				break;
+
+			case OPT_LOAD_AVERAGE:
+				if (sscanf(optarg, "%lf", &option.load_average) < 1 || option.load_average < 0.5) {
+					printf(gettext("Error: failed to parse argument for --load-average parameter, '%s' should be an positive decimal greater than %.1f\n"), optarg, 0.5);
+					return 1;
+				}
+				break;
+
 			case OPT_LOG_FILE:
 				if (!log_open_log_file(optarg)) {
 					printf(gettext("Error: failed to create log file '%s'\n"), optarg);
@@ -246,7 +270,7 @@ int main(int argc, char * argv[]) {
 	if (optind + 2 > argc)
 		return 1;
 
-	worker_process(&argv[optind], argc - optind - 1, argv[argc - 1]);
+	worker_process(&argv[optind], argc - optind - 1, argv[argc - 1], &option);
 
 	mainScreen = initscr();
 	getmaxyx(stdscr, row, col);
@@ -310,7 +334,9 @@ static void show_help() {
 	printf(gettext("                               Use 'help' to show available hash functions\n"));
 	printf(gettext("  -C, --checksum-file <file> : Defer checksum checking after copy and write checksum into <file>\n"));
 	printf(gettext("  -h, --help                 : Show this and exit\n"));
-	printf(gettext("  -l, --log-file <file>      : Log also into <file>\n"));
+	printf(gettext("  -j, --jobs <jobs>          : Run <jobs> simultaneously, default value: number of cpus\n"));
+	printf(gettext("  -l, --load-average <load>  : Do not copy while load average exceed <load> in the last minute\n"));
+	printf(gettext("  -L, --log-file <file>      : Log also into <file>\n"));
 	printf(gettext("  -p, --pause                : Pause at the end of copy\n\n"));
 }
 

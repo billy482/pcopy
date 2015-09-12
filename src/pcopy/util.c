@@ -29,18 +29,25 @@
 *  Copyright (C) 2015, Guillaume Clercin <clercin.guillaume@gmail.com>       *
 \****************************************************************************/
 
+#define _GNU_SOURCE
 // dirent
 #include <dirent.h>
 // open
 #include <fcntl.h>
+// pthread_mutex_lock
+#include <pthread.h>
 // sscanf
 #include <stdio.h>
+// getloadavg
+#include <stdlib.h>
 // memmove, strlen
 #include <string.h>
 // open
 #include <sys/stat.h>
 // open
 #include <sys/types.h>
+// clock_gettime
+#include <time.h>
 // close, read
 #include <unistd.h>
 
@@ -58,6 +65,36 @@ int util_basic_filter(const struct dirent * file) {
 		return 0;
 
 	return file->d_name[1] != '.' || file->d_name[2] != '\0';
+}
+
+void util_check_load_average(double limit) {
+	if (limit < 0.5)
+		return;
+
+	static double current_load_average[3];
+	static struct timespec last_check = { 0, 0 };
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+	pthread_mutex_lock(&lock);
+
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	if (last_check.tv_sec > 0 && last_check.tv_sec + 5 >= now.tv_sec) {
+		pthread_mutex_unlock(&lock);
+		return;
+	}
+
+	getloadavg(current_load_average, 3);
+
+	while (current_load_average[0] > limit) {
+		sleep(5);
+
+		getloadavg(current_load_average, 3);
+	}
+
+	clock_gettime(CLOCK_MONOTONIC, &last_check);
+	pthread_mutex_unlock(&lock);
 }
 
 unsigned int util_nb_cpus() {

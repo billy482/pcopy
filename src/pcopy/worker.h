@@ -35,6 +35,8 @@
 // bool
 #include <stdbool.h>
 
+struct pcopy_option;
+
 struct worker {
 	unsigned long job;
 
@@ -51,11 +53,13 @@ struct worker {
 		worker_status_running,
 		worker_status_finished
 	} status;
+
+	const struct pcopy_option * option;
 };
 
 bool worker_finished(void);
 struct worker * worker_get(unsigned int * nb_working_workers, unsigned int * nb_total_workers);
-void worker_process(char * inputs[], unsigned int nb_inputs, const char * output);
+void worker_process(char * inputs[], unsigned int nb_inputs, const char * output, struct pcopy_option * option);
 void worker_release(void);
 
 #endif
