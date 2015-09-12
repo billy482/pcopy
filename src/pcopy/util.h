@@ -36,9 +36,10 @@
 #include <sys/types.h>
 
 struct dirent;
+struct worker;
 
 int util_basic_filter(const struct dirent * file);
-void util_check_load_average(double limit);
+void util_check_load_average(struct worker * worker, double limit);
 unsigned int util_nb_cpus(void);
 size_t util_string_length(const char * string);
 size_t util_string_length2(const char * string, size_t length);

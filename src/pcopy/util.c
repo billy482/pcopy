@@ -52,6 +52,7 @@
 #include <unistd.h>
 
 #include "util.h"
+#include "worker.h"
 
 static int util_string_valid_utf8_char(const char * string);
 static int util_string_valid_utf8_char2(const unsigned char * ptr, unsigned short length);
@@ -67,13 +68,16 @@ int util_basic_filter(const struct dirent * file) {
 	return file->d_name[1] != '.' || file->d_name[2] != '\0';
 }
 
-void util_check_load_average(double limit) {
+void util_check_load_average(struct worker * worker, double limit) {
 	if (limit < 0.5)
 		return;
 
 	static double current_load_average[3];
 	static struct timespec last_check = { 0, 0 };
 	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+	if (worker != NULL)
+		worker->paused = true;
 
 	pthread_mutex_lock(&lock);
 
@@ -82,6 +86,10 @@ void util_check_load_average(double limit) {
 
 	if (last_check.tv_sec > 0 && last_check.tv_sec + 5 >= now.tv_sec) {
 		pthread_mutex_unlock(&lock);
+
+		if (worker != NULL)
+			worker->paused = false;
+
 		return;
 	}
 
@@ -93,8 +101,12 @@ void util_check_load_average(double limit) {
 		getloadavg(current_load_average, 3);
 	}
 
+	if (worker != NULL)
+		worker->paused = false;
+
 	clock_gettime(CLOCK_MONOTONIC, &last_check);
 	pthread_mutex_unlock(&lock);
+
 }
 
 unsigned int util_nb_cpus() {

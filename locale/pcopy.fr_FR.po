@@ -6,7 +6,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: pCopy v0.1\n"
         "Report-Msgid-Bugs-To: \n"
-        "POT-Creation-Date: 2015-09-12 15:05+0200\n"
+        "POT-Creation-Date: 2015-09-12 16:25+0200\n"
         "PO-Revision-Date: 2014-11-13 09:03+0100\n"
         "Last-Translator: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
         "Language-Team: Guillaume Clercin <clercin.guillaume+pcopy@gmail.com>\n"
@@ -21,89 +21,90 @@ msgstr  "Project-Id-Version: pCopy v0.1\n"
 msgid   "Error while opening file '%s' because %m"
 msgstr  "Erreur en ouvrant le fichier « %s » parceque %m"
 
-#: src/pcopy/pcopy.c:209
+#: src/pcopy/pcopy.c:220
 #, c-format
 msgid   "Available cryptographic hash functions: "
 msgstr  "Fonctions de hachage cryptographique : "
 
-#: src/pcopy/pcopy.c:214
+#: src/pcopy/pcopy.c:225
 #, c-format
 msgid   "'%s'"
 msgstr  "« %s »"
 
-#: src/pcopy/pcopy.c:229
+#: src/pcopy/pcopy.c:240
 #, c-format
 msgid   "Error: failed to create checksum file '%s'\n"
 msgstr  "Erreur : échec lors de la création du fichier d’empreinte « %s »\n"
 
-#: src/pcopy/pcopy.c:240
+#: src/pcopy/pcopy.c:251
 #, c-format
 msgid   "Error: failed to parse argument for --jobs parameter, '%s' should be an positive integer\n"
 msgstr  "Erreur : échec lors de l’analyse du paramètre de l’argument --jobs, « %s » doit être un entier positif\n"
 
-#: src/pcopy/pcopy.c:247
+#: src/pcopy/pcopy.c:258
 #, c-format
 msgid   "Error: failed to parse argument for --load-average parameter, '%s' should be an positive decimal greater than %.1f\n"
 msgstr  "Erreur : échec lors de l’analyse du paramètre de l’argument --load-average, « %s » doit être un décimal plus grand "
         "que %.1f\n"
 
-#: src/pcopy/pcopy.c:254
+#: src/pcopy/pcopy.c:265
 #, c-format
 msgid   "Error: failed to create log file '%s'\n"
 msgstr  "Erreur : échec lors de la création du fichier d’enregistrement « %s »\n"
 
-#: src/pcopy/pcopy.c:264
+#: src/pcopy/pcopy.c:275
 #, c-format
 msgid   "pCopy: parallel copying and checksumming\n"
 msgstr  "pCopy : copie et calcul d’empreinte en parralèle\n"
 
-#: src/pcopy/pcopy.c:265
+#: src/pcopy/pcopy.c:276
 #, c-format
 msgid   "version: %s, build: %s %s\n"
 msgstr  "version : %s, compilé : %s %s \n"
 
-#: src/pcopy/pcopy.c:332
+#: src/pcopy/pcopy.c:344
 #, c-format
 msgid   "Usage: pcopy [options] <src-files>... <dest-file>\n"
 msgstr  "Utilisation : pcopy [options] <src-files>... <dest-file>\n"
 
-#: src/pcopy/pcopy.c:333
+#: src/pcopy/pcopy.c:345
 #, c-format
 msgid   "  -c, --checksum <hash>      : Use <hash> as hash function,\n"
 msgstr  "  -c, --checksum <hash>         : Utilisez <hash> comme fonction de hachage,\n"
 
-#: src/pcopy/pcopy.c:334
+#: src/pcopy/pcopy.c:346
 #, c-format
 msgid   "                               Use 'help' to show available hash functions\n"
 msgstr  "                                  Utilisez « help » pour afficher les fonctions de hachage disponibles\n"
 
-#: src/pcopy/pcopy.c:335
+#: src/pcopy/pcopy.c:347
 #, c-format
 msgid   "  -C, --checksum-file <file> : Defer checksum checking after copy and write checksum into <file>\n"
 msgstr  "  -C, --checksum-file <fichier> : Différe la vérification de l’empreinte cryptographique après la copie et écrit "
         "l’empreinte dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:336
+#: src/pcopy/pcopy.c:348
 #, c-format
 msgid   "  -h, --help                 : Show this and exit\n"
 msgstr  "  -h, --help                    : Affiche ceci et quite\n"
 
-#: src/pcopy/pcopy.c:337
+#: src/pcopy/pcopy.c:349
 #, c-format
 msgid   "  -j, --jobs <jobs>          : Run <jobs> simultaneously, default value: number of cpus\n"
-msgstr  "  -j, --jobs <jobs>             : Exécute jusqu’à <jobs> tâches simultanément, value par défaut : nombre de processeurs\n"
+msgstr  "  -j, --jobs <jobs>             : Exécute jusqu’à <jobs> tâches simultanément, value par défaut : nombre de "
+        "processeurs\n"
 
-#: src/pcopy/pcopy.c:338
+#: src/pcopy/pcopy.c:350
 #, c-format
 msgid   "  -l, --load-average <load>  : Do not copy while load average exceed <load> in the last minute\n"
 msgstr  "  -l, --load-average <load>     : Ne copie pas tant que la charge système dépasse <load> pendant la dernière minute\n"
 
-#: src/pcopy/pcopy.c:339
+#: src/pcopy/pcopy.c:351
 #, c-format
 msgid   "  -L, --log-file <file>      : Log also into <file>\n"
 msgstr  "  -L, --log-file <fichier>      : Enregistre aussi dans <fichier>\n"
 
-#: src/pcopy/pcopy.c:340
+#: src/pcopy/pcopy.c:352
 #, c-format
 msgid   "  -p, --pause                : Pause at the end of copy\n"
         "\n"

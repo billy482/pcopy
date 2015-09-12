@@ -47,6 +47,7 @@ struct worker {
 	char * description;
 
 	volatile float pct;
+	volatile bool paused;
 
 	volatile enum {
 		worker_status_init,

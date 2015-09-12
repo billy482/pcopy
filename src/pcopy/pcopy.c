@@ -118,7 +118,11 @@ static void display() {
 		memset(buffer, ' ', buffer_length);
 		buffer[buffer_length] = '\0';
 
-		ssize_t nb_write = snprintf(buffer, buffer_length, "#%lu [%3.0f%%] : %s", worker->job, 100 * worker->pct, worker->description);
+		ssize_t nb_write;
+		if (worker->paused)
+			nb_write = snprintf(buffer, buffer_length, "#%lu [%3.0f%% P] : %s", worker->job, 100 * worker->pct, worker->description);
+		else
+			nb_write = snprintf(buffer, buffer_length, "#%lu [%3.0f%% A] : %s", worker->job, 100 * worker->pct, worker->description);
 
 		if (util_string_length(buffer) > col)
 			util_string_middle_elipsis2(buffer, col);
@@ -131,9 +135,16 @@ static void display() {
 		int width = col * worker->pct;
 		int wwidth = util_string_length2(buffer, width);
 
-		attron(COLOR_PAIR(2));
+		if (worker->paused)
+			attron(COLOR_PAIR(2));
+		else
+			attron(COLOR_PAIR(4));
 		mvprintw(i + offset, 0, "%*s", wwidth, buffer);
-		attroff(COLOR_PAIR(2));
+
+		if (worker->paused)
+			attroff(COLOR_PAIR(2));
+		else
+			attroff(COLOR_PAIR(4));
 		mvprintw(i + offset, width, "%s", buffer + wwidth);
 	}
 	worker_release();
@@ -285,6 +296,7 @@ int main(int argc, char * argv[]) {
 		init_pair(1, COLOR_WHITE, COLOR_BLUE);
 		init_pair(2, COLOR_WHITE, COLOR_RED);
 		init_pair(3, COLOR_WHITE, COLOR_BLUE);
+		init_pair(4, COLOR_RED, COLOR_GREEN);
 	}
 
 	log_reserve_message(row);

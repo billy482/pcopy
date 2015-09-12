@@ -143,7 +143,7 @@ static void worker_process_checksum(void * arg) {
 		float done = nb_total_read;
 		worker->pct = done / info.st_size;
 
-		util_check_load_average(worker->option->load_average);
+		util_check_load_average(worker, worker->option->load_average);
 	}
 
 	if (nb_read < 0)
@@ -222,7 +222,7 @@ static void worker_process_copy(void * arg) {
 
 		chck->ops->update(chck, buffer, nb_read);
 
-		util_check_load_average(worker->option->load_average);
+		util_check_load_average(worker, worker->option->load_average);
 	}
 
 	char * computed = chck->ops->digest(chck);
@@ -284,7 +284,7 @@ static void worker_process_copy(void * arg) {
 		done /= 2;
 		worker->pct = 0.5 + done / info.st_size;
 
-		util_check_load_average(worker->option->load_average);
+		util_check_load_average(worker, worker->option->load_average);
 	}
 
 	if (nb_read < 0)
